@@ -3,6 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {VRMLoaderPlugin,VRMUtils} from '@pixiv/three-vrm';
 const status=document.querySelector('#status'),out=document.querySelector('#page'),ctx=out.getContext('2d');
 window.labState='loading';
+async function initialize(){
 try{
 const renderer=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
 renderer.setPixelRatio(1);renderer.setSize(1040,610);renderer.outputColorSpace=T.SRGBColorSpace;
@@ -38,3 +39,6 @@ draw();window.labStats={meshes,bones,height,expressions:Object.keys(em?.expressi
 document.querySelector('#expression').onchange=draw;
 const btn=document.querySelector('#save');btn.disabled=false;btn.onclick=()=>out.toBlob(blob=>{if(!blob)return;const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download='manga-vrm.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);},'image/png');
 }catch(e){window.labState='error';window.labError=String(e.message||e);status.textContent='Erro: '+window.labError;console.error(e);}
+
+}
+void initialize();
