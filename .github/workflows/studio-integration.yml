@@ -1,0 +1,38 @@
+name: Manga Studio V0.21 real panel engine
+on:
+  push:
+    branches: [main]
+    paths: ['vrm-lab/studio.js','vrm-lab/build-studio.mjs','vrm-lab/test-studio.mjs','vrm-lab/studio-test.html','.github/workflows/studio-integration.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: manga-studio-integration
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: vrm-lab
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: node build-studio.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: node test-studio.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: manga-studio-v21-runtime
+          path: |
+            vrm-lab/studio-dist/
+            vrm-lab/studio-evidence/
+            vrm-lab/package-lock.json
+          retention-days: 3
+          if-no-files-found: error
