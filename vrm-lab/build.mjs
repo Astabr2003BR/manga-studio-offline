@@ -1,0 +1,15 @@
+import {build} from 'esbuild';
+import {mkdir,writeFile,copyFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+const u='https://raw.githubusercontent.com/madjin/vrm-samples/e16eb187100149a315ad92c3c9968f1d5baa6c7d/vroid/beta/HairSample_Male.vrm';
+const r=await fetch(u,{signal:AbortSignal.timeout(90000)});
+if(!r.ok)throw Error('Model HTTP '+r.status);
+const b=Buffer.from(await r.arrayBuffer());
+const hash=createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
+if(b.length!==18481892||hash!=='46e8c583ce5df3b8ee167141b59ba3ad583a2687'||b.readUInt32LE(0)!==0x46546c67)throw Error('Model integrity failed');
+await mkdir('dist',{recursive:true});
+await writeFile('dist/character.vrm',b);
+await copyFile('index.html','dist/index.html');
+await copyFile('ASSETS.md','dist/ASSETS.md');
+await build({entryPoints:['main.js'],bundle:true,format:'esm',target:'es2020',outfile:'dist/main.js',minify:true,legalComments:'inline'});
+console.log('Verified model bytes:',b.length,'Git blob:',hash);
