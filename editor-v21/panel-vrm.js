@@ -9,4 +9,5 @@ if(run!==epoch||ticket!==importTicket||project!==owner||active!==i||owner.panels
 const vrm={key,layer};checkIllustrationBudget({...owner,panels:owner.panels.map((q,j)=>j===i?{...q,vrm}:q)});p.vrm=vrm;p.engine='vrm';pruneIllustrations();sync();msg.textContent='Q'+(i+1)+' · Personagem VRM renderizado.';status('Quadro '+(i+1)+' atualizado. Os demais foram preservados.');
 }catch(e){candidate?.dispose();release();pruneIllustrations();msg.textContent='Falha VRM: '+String(e.message||e)+' Projeto preservado.';}finally{busy=false;btn.disabled=false;}};
 for(const k of ['zoom','x','y'])document.getElementById('vrm-panel-'+k).addEventListener('input',e=>{const p=project.panels[active];p.framing=cleanFraming({...p.framing,[k]:Number(e.target.value)});render();});
+document.getElementById('vrm-finish').addEventListener('change',e=>{const p=project.panels[active];if(e.target.value==='cinema')p.finish='cinema';else delete p.finish;render();});
 window.addEventListener('pagehide',release);})();
