@@ -70,17 +70,21 @@ export function createStudio(canvas){
  check();if(!vrm)throw Error('Importe um avatar.');const a=Math.max(.8,Math.min(3,Number(aspect)||1.6)),width=1024,h=Math.round(width/a);renderer.setSize(width,h,false);camera.aspect=width/h;camera.updateProjectionMatrix();vrm.humanoid.resetNormalizedPose();vrm.scene.position.set(0,0,0);
  const seated=pose==='sit';const holding=pose==='phone'||seated;
  bone('leftUpperArm',0,0,1.15);bone('rightUpperArm',0,0,-1.15);bone('leftLowerArm',-.08,0,0);bone('rightLowerArm',-.10,0,0);
- if(seated){bone('leftUpperLeg',-1.39,0,.08);bone('rightUpperLeg',-1.39,0,-.08);bone('leftLowerLeg',1.49,0,0);bone('rightLowerLeg',1.49,0,0);bone('spine',.12,0,0);}
+ if(seated){bone('spine',.12,0,0);vrm.update(0);scene.updateMatrixWorld(true);for(const side of ['left','right']){const hip=raw(side+'UpperLeg');if(!hip)continue;aim(side+'UpperLeg',side+'LowerLeg',hip.clone().add(new T.Vector3(0,-height*.035,height*.30)));vrm.update(0);scene.updateMatrixWorld(true);const knee=raw(side+'LowerLeg');if(knee)aim(side+'LowerLeg',side+'Foot',knee.clone().add(new T.Vector3(0,-height*.30,height*.015)));}}
  if(pose==='walk'){bone('leftUpperLeg',-.32,0,0);bone('rightUpperLeg',.32,0,0);bone('rightLowerLeg',.25,0,0);bone('leftUpperArm',.24,0,1.15);bone('rightUpperArm',-.24,0,-1.15);}
  if(holding){
   bone('head',.18,-.08,0);vrm.update(0);scene.updateMatrixWorld(true);
-  // Aim the upper and lower arms in world space; offsets scale with the avatar.
-  for(const side of ['right','left']){const shoulder=raw(side+'UpperArm'),other=raw((side==='right'?'left':'right')+'UpperArm');if(!shoulder||!other)continue;
-   const inward=other.clone().sub(shoulder).normalize();
-   const elbow=shoulder.clone().addScaledVector(inward,height*.065).add(new T.Vector3(0,-height*.135,height*.065));
-   const wrist=shoulder.clone().addScaledVector(inward,height*.125).add(new T.Vector3(0,-height*(seated?.20:.115),height*.19));
-   aim(side+'UpperArm',side+'LowerArm',elbow);aim(side+'LowerArm',side+'Hand',wrist);
+  // One-handed phone pose: elbow remains close to the side, not across the chest.
+  const shoulder=raw('rightUpperArm'),other=raw('leftUpperArm');
+  if(shoulder&&other){const inward=other.clone().sub(shoulder).normalize();
+   const elbow=shoulder.clone().addScaledVector(inward,-height*.018).add(new T.Vector3(0,-height*.16,height*.055));
+   aim('rightUpperArm','rightLowerArm',elbow);vrm.update(0);scene.updateMatrixWorld(true);
+   const wrist=shoulder.clone().addScaledVector(inward,height*.045).add(new T.Vector3(0,-height*.105,height*.22));
+   aim('rightLowerArm','rightHand',wrist);vrm.update(0);scene.updateMatrixWorld(true);
+   const hand=raw('rightHand');if(hand)aim('rightHand','rightMiddleProximal',hand.clone().add(new T.Vector3(0,height*.07,height*.015)).addScaledVector(inward,height*.01));
   }
+  if(seated){const sh=raw('leftUpperArm');if(sh){aim('leftUpperArm','leftLowerArm',sh.clone().add(new T.Vector3(height*.025,-height*.15,height*.045)));vrm.update(0);scene.updateMatrixWorld(true);const hip=raw('leftUpperLeg');if(hip)aim('leftLowerArm','leftHand',hip.clone().add(new T.Vector3(height*.055,-height*.015,height*.18)));}}
+
  }
  vrm.update(0);scene.updateMatrixWorld(true);
  if(seated){const feet=['leftFoot','rightFoot'].map(raw).filter(Boolean);if(feet.length){vrm.scene.position.y+=.065-Math.min(...feet.map(v=>v.y));vrm.update(0);scene.updateMatrixWorld(true);}}
@@ -90,12 +94,12 @@ export function createStudio(canvas){
  const hips=raw('hips'),head=raw('head'),rh=raw('rightHand'),lh=raw('leftHand');
  if(seated&&hips){bed.position.set(hips.x,hips.y-.70,hips.z-.98);}else bed.position.set(1.28,0,-1.42);
  phone.visible=holding&&!!rh&&!!head;
- if(phone.visible){phone.position.copy(rh);if(lh)phone.position.lerp(lh,.4);phone.position.y+=height*.024;phone.position.z+=height*.028;phone.lookAt(head);}
+ if(phone.visible){phone.position.copy(rh);const palm=raw('rightMiddleProximal');if(palm)phone.position.lerp(palm,.76);else phone.position.y+=height*.022;phone.position.z+=.018;phone.lookAt(head);}
  key.color.set(light==='cool'?0xaccbff:0xffcba0);key.intensity=light==='warm'?2.1:1.65;rim.intensity=light==='warm'?.5:2.0;fill.intensity=light==='cool'?.8:.45;
  const hp=vrm.humanoid.getRawBoneNode('head')?.getWorldPosition(new T.Vector3());if(!hp)throw Error('Cabeça ausente.');const target=hp.clone(),z=Math.max(1,Math.min(2.8,Number(zoom)||1)),clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,Number(v)||0));
  target.y+=height*(shot==='close'?.015:shot==='wide'?(seated?-.29:-.39):-.19)+clamp(y,-1,1)*height*.25;target.x+=clamp(x,-1,1)*height*.25;
  const d=height*(shot==='close'?.63:shot==='wide'?(seated?1.45:1.85):1.25)/z,angle=T.MathUtils.degToRad(clamp(yaw,-65,65)),tilt=T.MathUtils.degToRad(clamp(pitch,-30,30));
- camera.position.set(target.x+Math.sin(angle)*d,target.y+Math.sin(tilt)*d,target.z+Math.cos(angle)*Math.cos(tilt)*d);camera.lookAt(target);renderer.render(scene,camera);lastDiagnostics={seated,phoneVisible:phone.visible,hipY:hips?.y??null,bedTop:bed.position.y+.608,handDistance:rh&&phone.visible?rh.distanceTo(phone.position):null,footY:raw('leftFoot')?.y??null};return canvas.toDataURL('image/png');
+ camera.position.set(target.x+Math.sin(angle)*d,target.y+Math.sin(tilt)*d,target.z+Math.cos(angle)*Math.cos(tilt)*d);camera.lookAt(target);renderer.render(scene,camera);lastDiagnostics={seated,phoneVisible:phone.visible,hipY:hips?.y??null,bedTop:bed.position.y+.608,handDistance:rh&&phone.visible?rh.distanceTo(phone.position):null,footY:raw('leftFoot')?.y??null,kneeForward:(raw('leftLowerLeg')?.z??0)-(raw('leftUpperLeg')?.z??0)};return canvas.toDataURL('image/png');
  }
  let lastDiagnostics=null;
  function dispose(){if(disposed)return;disposed=true;canvas.removeEventListener('webglcontextlost',lostFn);canvas.removeEventListener('webglcontextrestored',restoreFn);if(vrm){scene.remove(vrm.scene);VRMUtils.deepDispose(vrm.scene);vrm=null;}room.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.map?.dispose();o.material.dispose();}});phone.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});renderer.dispose();}
