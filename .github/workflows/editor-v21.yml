@@ -1,0 +1,38 @@
+name: Manga Studio V0.21 integrated editor
+on:
+  push:
+    branches: [main]
+    paths: ['editor-v21/**', '.github/workflows/editor-v21.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: manga-editor-v21
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+        working-directory: vrm-lab
+      - run: node build-studio.mjs
+        working-directory: vrm-lab
+      - run: node editor-v21/build.mjs
+      - run: npx playwright install --with-deps chromium
+        working-directory: vrm-lab
+      - run: node editor-v21/test.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: manga-studio-v21-integrated
+          path: |
+            editor-v21/dist/
+            editor-v21/evidence/
+          retention-days: 3
+          if-no-files-found: error

@@ -1,0 +1,12 @@
+(()=>{'use strict';
+const btn=document.getElementById('panel-vrm-render'),msg=document.getElementById('panel-vrm-status');let studio=null,buffer=null,busy=false,epoch=0;
+async function model(){if(buffer)return buffer;const e=document.getElementById('vrm-embedded-model');if(!e)throw Error('Use o HTML portátil com modelo incorporado.');const b=Uint8Array.from(atob(e.textContent.trim()),c=>c.charCodeAt(0));if(b.length!==18481892)throw Error('Modelo incorporado inválido.');buffer=b.buffer;return buffer;}
+function release(){epoch++;studio?.dispose();studio=null;buffer=null;}
+btn.onclick=async()=>{if(busy)return;const owner=project,p=owner.panels[active],i=active,key=vrmKey(p,owner),spec=vrmSpec(p,owner),ticket=++importTicket,run=epoch;busy=true;btn.disabled=true;msg.textContent='Q'+(i+1)+' · Carregando avatar e renderizando...';let candidate=null;
+try{if(!studio){const api=await window.loadMangaEngine();const bytes=await model();if(run!==epoch)throw Error('Operação cancelada.');candidate=api.createStudio(document.createElement('canvas'));if(!await candidate.load(bytes))throw Error('Modelo não carregado.');if(run!==epoch)throw Error('Operação cancelada.');studio=candidate;candidate=null;}
+const data=studio.draw(spec),layer=cleanLayer({data,name:'VRoid CC0 · quadro '+(i+1),zoom:1,x:0,y:0});await artImage(layer.data).promise;
+if(run!==epoch||ticket!==importTicket||project!==owner||active!==i||owner.panels[i]!==p||vrmKey(p,owner)!==key)throw Error('Projeto, quadro ou configuração mudou. Render cancelado.');
+const vrm={key,layer};checkIllustrationBudget({...owner,panels:owner.panels.map((q,j)=>j===i?{...q,vrm}:q)});p.vrm=vrm;p.engine='vrm';pruneIllustrations();sync();msg.textContent='Q'+(i+1)+' · Personagem VRM renderizado.';status('Quadro '+(i+1)+' atualizado. Os demais foram preservados.');
+}catch(e){candidate?.dispose();release();pruneIllustrations();msg.textContent='Falha VRM: '+String(e.message||e)+' Projeto preservado.';}finally{busy=false;btn.disabled=false;}};
+for(const k of ['zoom','x','y'])document.getElementById('vrm-panel-'+k).addEventListener('input',e=>{const p=project.panels[active];p.framing=cleanFraming({...p.framing,[k]:Number(e.target.value)});render();});
+window.addEventListener('pagehide',release);})();
