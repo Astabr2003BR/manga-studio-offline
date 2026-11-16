@@ -1,8 +1,8 @@
-name: Manga Studio V0.23 integrated editor
+name: Manga Studio V0.24 integrated editor
 on:
   push:
     branches: [main]
-    paths: ['editor-v21/**', '.github/workflows/editor-v21.yml']
+    paths: ['editor-v21/**', 'vrm-lab/studio.js', 'vrm-lab/build-studio.mjs', 'vrm-lab/package.json', '.github/workflows/editor-v21.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
       - run: node editor-v21/test.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: manga-studio-v23-integrated
+          name: manga-studio-v24-integrated
           path: |
             editor-v21/dist/
             editor-v21/evidence/
