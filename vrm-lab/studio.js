@@ -172,16 +172,32 @@ export function createStudio(canvas){
   for(const name of ['Index','Middle','Ring','Little']){const prefix='right'+name,base=raw(prefix+'Proximal'),mid=raw(prefix+'Intermediate'),tip=raw(prefix+'Distal');if(!base||!mid||!tip)continue;
    const side=base.clone().sub(phone.position).dot(right)>=0?1:-1,edge=phone.position.clone().addScaledVector(right,side*(half+.008));
    // Curl first phalanx toward the side of the handset; the next folds over the edge.
-   const edgeY=T.MathUtils.clamp(base.clone().sub(phone.position).dot(up)*.68,-.051,.051);
+   const preferredY=T.MathUtils.clamp(base.clone().sub(phone.position).dot(up)*.68,-.051,.051);
    const sideGap=name==='Index'?.005:name==='Middle'?.004:name==='Ring'?.003:.002;
-   const contactTarget=phone.position.clone().addScaledVector(right,side*(half+sideGap)).addScaledVector(up,edgeY).addScaledVector(normal,-.003);
-   const solution=refined?solveGripFinger(base,mid,tip,contactTarget,mid.clone().sub(base).addScaledVector(normal,-.020),1.95):null;
+   const bendHint=mid.clone().sub(base).addScaledVector(normal,-.020);
+   // Search reachable contact positions on the *existing* phone edge rather than
+   // exceeding a natural curl angle to reach an unreachable center target.
+   // Small deterministic vertical variations separate individual fingers.
+   const preferredOffset=name==='Index'?.012:name==='Middle'?.004:name==='Ring'?-.004:-.012;
+   const desiredY=T.MathUtils.clamp(preferredY+preferredOffset,-.060,.060);
+   let best=null;
+   if(refined)for(let k=-10;k<=10;k++){
+    const candidateY=k*.006;
+    const target=phone.position.clone().addScaledVector(right,side*(half+sideGap)).addScaledVector(up,candidateY).addScaledVector(normal,-.003);
+    const ik=solveGripFinger(base,mid,tip,target,bendHint,1.70);
+    if(!ik)continue;
+    const score=ik.reachError*20+Math.abs(candidateY-desiredY)*.14+Math.abs(ik.bend-1.1)*.0008;
+    if(!best||score<best.score)best={score,ik,target,candidateY};
+   }
+   const edgeY=best?.candidateY??preferredY;
+   const contactTarget=best?.target??phone.position.clone().addScaledVector(right,side*(half+sideGap)).addScaledVector(up,edgeY).addScaledVector(normal,-.003);
+   const solution=refined?(best?.ik??solveGripFinger(base,mid,tip,contactTarget,bendHint,1.70)):null;
    const direction=mid.clone().sub(base).normalize().multiplyScalar(refined?.72:.55).add(normal.clone().multiplyScalar(refined?-.24:.75)).add(right.clone().multiplyScalar(refined?side*.12:-side*.19)).normalize();
    aim(prefix+'Proximal',prefix+'Intermediate',solution?solution.joint:base.clone().add(direction));updatePose();joints++;
    const m=raw(prefix+'Intermediate');
    if(m){
     const towardEdge=solution?solution.end:(refined?contactTarget:edge.clone().addScaledVector(up,(base.clone().sub(middle).dot(up))*.6).addScaledVector(normal,.018));
-    if(refined){fingerTargets.push({name,height:edgeY,sideGap});fingerIK.push({name,solved:!!solution,bend:solution?.bend??null,reachError:solution?.reachError??null});}
+    if(refined){fingerTargets.push({name,height:edgeY,sideGap});fingerIK.push({name,solved:!!solution,bend:solution?.bend??null,reachError:solution?.reachError??null,edgeY});}
     aim(prefix+'Intermediate',prefix+'Distal',towardEdge);updatePose();joints++;
     const d=raw(prefix+'Distal');if(d){distances.push(d.distanceTo(edge));if(refined){
      const midNow=raw(prefix+'Intermediate'),baseNow=raw(prefix+'Proximal');
