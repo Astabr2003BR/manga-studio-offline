@@ -79,7 +79,7 @@ Critérios de aceitação: melhorias visuais perceptíveis e documentadas; nenhu
 
 Gratuito/offline, sem IA generativa no aplicativo, sem créditos, mensalidades ou serviços pagos. Android-first. Preservar o visual aprovado, código estável, funcionalidades e dados. Não misturar projetos, não apagar dados, não publicar APK/AAB sem autorização. Priorizar soluções testáveis, reversíveis, seguras e manutenção simples.
 
-**Próxima ação concreta:** concluir CI e comparar os PNGs da segunda candidata do primeiro incremento com as referências V0.30/V0.31; corrigir qualquer regressão antes de promover. Continuar bloco 1 com cabelo, mão do celular e materiais após essa revisão. Não tratar V0.40 como pronta.
+**Próxima ação concreta:** continuar na branch `v040-artwork-block1` a partir de `4282ecaa2b29ddcd72e650600f0902060c2baaca` (CI verde), aprimorando geometria e materiais do cabelo e a mão do celular. Preservar a correção de manchas do cobertor; naturalidade têxtil segue pendente. Não promover V0.40 até consolidar e validar os blocos restantes.
 
 
 ## 8. Retomada V0.40 — incremento 1 (2026-11-16)
@@ -105,3 +105,11 @@ Gratuito/offline, sem IA generativa no aplicativo, sem créditos, mensalidades o
 - CI intermediário `43896956051` (commit `d998bb2`) falhou por rodar o teste antigo que esperava altura .70; valor obtido .60. Não é falha ignorada: a expectativa foi atualizada no commit `c293d9a` e inclui também a verificação de uma malha fechada e restauração de duas camadas em story.
 - CI isolado por ref em `4282ecaa2b29ddcd72e650600f0902060c2baaca`, para que validações de main e PR não se cancelem entre si. PR #1 foi fechado/reaberto (mesmo PR, rascunho) exclusivamente para disparar o CI do HEAD correto; sem merge.
 - Execução real da segunda candidata: https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43897230516 (HEAD `4282ecaa2b29ddcd72e650600f0902060c2baaca`, em execução neste registro). Aguardam-se motor, editor e PNG desta execução antes de aprovação visual/técnica.
+
+### Fechamento técnico do incremento 1 — revisão 2
+
+- HEAD candidato `4282ecaa2b29ddcd72e650600f0902060c2baaca`. CI `43897230516` cancelado por execução duplicada do mesmo HEAD (motor aprovado; editor interrompido); execução definitiva https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43897420977 concluída com sucesso integral. Artefato https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43897420977/artifacts/14240156074.
+- Relatório do editor: 58/58, errors=[], external=[]; motor real aprovado, relaxedHandJoints=8, pillowHeight=.60, quiltLayers=1, restauração legada e determinismo aprovados. Modelo original preservado (18145 vértices, 131 primitivas). Sem teste físico Android.
+- QA visual real da página editorial de revisão 2: manchas pretas do cobertor desapareceram nesta cena; travesseiros mais baixos e mão livre suavizada. Correção localizada aprovada visualmente para continuidade, sem aprovação artística global: cobertor ainda rígido, rosto/roupa com aparência 3D, cabelo geométrico e mão do celular seguem pendentes. V0.30 permanece referência aprovada pelo usuário; V0.31 permanece versão estável em main. Não houve merge nem release.
+- Auditoria do VRM CC0 para próxima etapa: cabelo `F00_000_Hair_00_HAIR` utiliza 114 primitivas, 7775 vértices, 9196 triângulos e uma textura de base. Face/pele utiliza geometria existente; preservar identidade, silhueta, UVs, animação e materiais do modelo importado. Não adicionar IA generativa, APIs ou assets sem licença.
+- Próxima ação concreta: iniciar segundo incremento do bloco 1 no HEAD candidato, com melhoria de cabelo e mão que segura o celular, testes reais e comparação de PNGs. Manter malha única do cobertor e registrar melhorias têxteis no bloco gráfico. Manter o PR #1 em rascunho para consolidar a V0.40.
