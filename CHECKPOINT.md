@@ -79,7 +79,7 @@ Critérios de aceitação: melhorias visuais perceptíveis e documentadas; nenhu
 
 Gratuito/offline, sem IA generativa no aplicativo, sem créditos, mensalidades ou serviços pagos. Android-first. Preservar o visual aprovado, código estável, funcionalidades e dados. Não misturar projetos, não apagar dados, não publicar APK/AAB sem autorização. Priorizar soluções testáveis, reversíveis, seguras e manutenção simples.
 
-**Próxima ação concreta:** concluir CI e comparar os PNGs do primeiro incremento com as referências V0.30/V0.31; corrigir qualquer regressão antes de promover. Continuar bloco 1 com cabelo, mão do celular e materiais após essa revisão. Não tratar V0.40 como pronta.
+**Próxima ação concreta:** concluir CI e comparar os PNGs da segunda candidata do primeiro incremento com as referências V0.30/V0.31; corrigir qualquer regressão antes de promover. Continuar bloco 1 com cabelo, mão do celular e materiais após essa revisão. Não tratar V0.40 como pronta.
 
 
 ## 8. Retomada V0.40 — incremento 1 (2026-11-16)
@@ -92,3 +92,10 @@ Gratuito/offline, sem IA generativa no aplicativo, sem créditos, mensalidades o
 - CI real da candidata: https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43896292213. Builds do motor e editor concluídos com sucesso; testes gráficos ainda em execução neste registro. Não declarar aprovação de renderização antes dos resultados.
 - Ambiente local desta conversa não disponibilizou WebGL 2 no Chromium; nenhuma renderização local aprovada. A validação gráfica depende do CI real e dos PNGs produzidos. Android físico permanece pendente.
 - Sem merge, APK/AAB, custos, serviços externos ou alteração de schema. Próximo passo: recuperar resultados e artefatos da candidata; comparar página editorial com V0.30 e V0.31; se necessário corrigir e repetir, antes de promover.
+
+### Revisão 1 e autocorreção
+
+- CI inicial `43896292213` concluído com sucesso: motor (inclusive novos testes) e editor 58/58, sem erros não tratados ou rede externa no fluxo testado. Artefato: https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43896292213/artifacts/14238753191.
+- PNG real comparado com V0.30/V0.31: mão livre ligeiramente mais relaxada; travesseiros elevados demais e manchas escuras do cobertor persistem. Candidata 1 reprovada parcialmente no QA visual, apesar do CI verde. Não promover.
+- Candidata 2: `d998bb2287469fb4e9f270b55ca68011bc9adc65` substitui a dupla superfície do cobertor detalhado por malha fechada única com bordas deformadas, mantém story clássico e reduz altura dos travesseiros para .60; conserva a mão relaxada. Testes atualizados em `c293d9aa83445e8688fcd47c9e21b8c9c239a971` para camada única, altura e restauração legada. Regressão desta candidata ainda não confirmada neste registro.
+- Próxima ação: consultar CI do HEAD `c293d9aa83445e8688fcd47c9e21b8c9c239a971` no PR #1, baixar novo PNG, inspecionar cobertor, travesseiros e mão. Não confundir CI anterior com o HEAD atualizado. V0.31 continua estável; não renomear a entrega V0.40 até consolidar os demais blocos.
