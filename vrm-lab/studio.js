@@ -167,13 +167,29 @@ export function createStudio(canvas){
   let wristRoll=0;if(refined){const hand=vrm.humanoid.getNormalizedBoneNode('rightHand'),span=index.clone().sub(little);span.addScaledVector(up,-span.dot(up)).normalize();if(hand&&span.lengthSq()>.9){const desired=right.clone().multiplyScalar(span.dot(right)<0?-1:1),angle=Math.atan2(up.dot(span.clone().cross(desired)),span.dot(desired));wristRoll=T.MathUtils.clamp(angle,-.75,.75);const world=hand.getWorldQuaternion(new T.Quaternion()),q=new T.Quaternion().setFromAxisAngle(up,wristRoll),parent=hand.parent.getWorldQuaternion(new T.Quaternion()).invert();hand.quaternion.copy(parent.multiply(q.multiply(world)));updatePose();middle=raw('rightMiddleProximal')??middle;index=raw('rightIndexProximal')??index;little=raw('rightLittleProximal')??little;}}
   phone.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(right,up,normal));
   phone.position.copy(middle).addScaledVector(up,refined?.011:.017).addScaledVector(normal,refined?-.007:.023);
-  const width=.071*phone.scale.x,half=width*.5;let joints=0,distances=[],contacts=[],thumbJoints=0,thumbTipGap=null;
+  const width=.071*phone.scale.x,half=width*.5;let joints=0,distances=[],contacts=[],thumbJoints=0,thumbTipGap=null;const curls=[],fingerTargets=[];
   for(const name of ['Index','Middle','Ring','Little']){const prefix='right'+name,base=raw(prefix+'Proximal'),mid=raw(prefix+'Intermediate'),tip=raw(prefix+'Distal');if(!base||!mid||!tip)continue;
    const side=base.clone().sub(phone.position).dot(right)>=0?1:-1,edge=phone.position.clone().addScaledVector(right,side*(half+.008));
    // Curl first phalanx toward the side of the handset; the next folds over the edge.
    const direction=mid.clone().sub(base).normalize().multiplyScalar(refined?.72:.55).add(normal.clone().multiplyScalar(refined?.55:.75)).add(right.clone().multiplyScalar(refined?side*.12:-side*.19)).normalize();
    aim(prefix+'Proximal',prefix+'Intermediate',base.clone().add(direction));updatePose();joints++;
-   const m=raw(prefix+'Intermediate');if(m){const towardEdge=edge.clone().addScaledVector(up,(base.clone().sub(middle).dot(up))*.6).addScaledVector(normal,refined?-.003:.018);aim(prefix+'Intermediate',prefix+'Distal',towardEdge);updatePose();joints++;const d=raw(prefix+'Distal');if(d){distances.push(d.distanceTo(edge));if(refined){const rel=d.clone().sub(phone.position),dx=Math.max(0,Math.abs(rel.dot(right))-half),dy=Math.max(0,Math.abs(rel.dot(up))-.145*phone.scale.y*.5),dz=Math.max(0,Math.abs(rel.dot(normal))-.006*phone.scale.z);contacts.push(Math.hypot(dx,dy,dz));}}}
+   const m=raw(prefix+'Intermediate');if(m){
+    // Stagger each target along the actual handset edge and keep the last
+    // phalanx within the phone height instead of pulling it below the case.
+    const edgeY=T.MathUtils.clamp(base.clone().sub(phone.position).dot(up)*.68,-.051,.051);
+    const sideGap=name==='Index'?.005:name==='Middle'?.004:name==='Ring'?.003:.002;
+    const towardEdge=refined
+     ?phone.position.clone().addScaledVector(right,side*(half+sideGap)).addScaledVector(up,edgeY).addScaledVector(normal,-.003)
+     :edge.clone().addScaledVector(up,(base.clone().sub(middle).dot(up))*.6).addScaledVector(normal,.018);
+    if(refined)fingerTargets.push({name,height:edgeY,sideGap});
+    aim(prefix+'Intermediate',prefix+'Distal',towardEdge);updatePose();joints++;
+    const d=raw(prefix+'Distal');if(d){distances.push(d.distanceTo(edge));if(refined){
+     const midNow=raw(prefix+'Intermediate'),baseNow=raw(prefix+'Proximal');
+     if(midNow&&baseNow){const a=midNow.clone().sub(baseNow).normalize(),b=d.clone().sub(midNow).normalize();curls.push({name,angle:a.angleTo(b)});}
+     const rel=d.clone().sub(phone.position),dx=Math.max(0,Math.abs(rel.dot(right))-half),dy=Math.max(0,Math.abs(rel.dot(up))-.145*phone.scale.y*.5),dz=Math.max(0,Math.abs(rel.dot(normal))-.006*phone.scale.z);
+     contacts.push(Math.hypot(dx,dy,dz));
+    }}
+   }
   }
   const thumb=raw('rightThumbMetacarpal'),thumbMid=raw('rightThumbProximal'),thumbDistal=raw('rightThumbDistal');
   if(refined&&thumb&&thumbMid&&thumbDistal){
@@ -187,7 +203,7 @@ export function createStudio(canvas){
    }
   }else if(thumbMid&&thumbDistal){const side=thumbMid.clone().sub(phone.position).dot(right)>=0?1:-1;aim('rightThumbProximal','rightThumbDistal',phone.position.clone().addScaledVector(right,side*(refined?.027:.024)).addScaledVector(up,refined?-.034:-.025).addScaledVector(normal,refined?.008:.013));updatePose();joints++;}
   const tips=refined?refineFingerTips(right,up,normal,half):{tipJoints:0,tipBefore:null,tipAfter:null,tipMaxAngle:0};
-  return {gripJoints:joints,gripError:distances.length?Math.max(...distances):null,refinedGrip:refined,wristRoll,thumbJoints,thumbTipGap,phonePalmOffset:phone.position.clone().sub(middle).dot(normal),contactMean:contacts.length?contacts.reduce((a,b)=>a+b,0)/contacts.length:null,...tips};
+  return {gripJoints:joints,gripError:distances.length?Math.max(...distances):null,refinedGrip:refined,wristRoll,thumbJoints,thumbTipGap,phonePalmOffset:phone.position.clone().sub(middle).dot(normal),contactMean:contacts.length?contacts.reduce((a,b)=>a+b,0)/contacts.length:null,fingerCurls:curls,fingerTargets,...tips};
  }
  // Textile overlay retains the avatar's existing UV layout and alpha, with bounded memory.
  // Only the known bundled model topology is eligible. Imported/custom meshes
