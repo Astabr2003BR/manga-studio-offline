@@ -53,7 +53,7 @@ Atualizado em 2026-11-16. Este documento é a fonte de continuidade técnica do 
 
 ## 5. Próxima atualização consolidada: V0.40
 
-**Status: planejada; implementação ainda não iniciada neste checkpoint.** Basear o trabalho na V0.31, mantendo V0.30 reproduzível. A próxima conversa deve conferir o HEAD e qualquer trabalho posterior antes de agir.
+**Status: em desenvolvimento; primeiro incremento em branch de revisão, ainda não promovido para main.** Basear o trabalho na V0.31, mantendo V0.30 reproduzível. A próxima conversa deve conferir o HEAD e qualquer trabalho posterior antes de agir.
 
 Ordem proposta de blocos (não criar cinco modos novos apenas para mascarar problemas; priorizar ganho visual e controles úteis):
 
@@ -79,4 +79,16 @@ Critérios de aceitação: melhorias visuais perceptíveis e documentadas; nenhu
 
 Gratuito/offline, sem IA generativa no aplicativo, sem créditos, mensalidades ou serviços pagos. Android-first. Preservar o visual aprovado, código estável, funcionalidades e dados. Não misturar projetos, não apagar dados, não publicar APK/AAB sem autorização. Priorizar soluções testáveis, reversíveis, seguras e manutenção simples.
 
-**Próxima ação concreta:** iniciar o bloco 1 da V0.40, auditando e propondo melhoria de recursos artísticos e personagem, com referência V0.30 e baseline V0.31. Não tratar V0.40 como pronta.
+**Próxima ação concreta:** concluir CI e comparar os PNGs do primeiro incremento com as referências V0.30/V0.31; corrigir qualquer regressão antes de promover. Continuar bloco 1 com cabelo, mão do celular e materiais após essa revisão. Não tratar V0.40 como pronta.
+
+
+## 8. Retomada V0.40 — incremento 1 (2026-11-16)
+
+- HEAD main de partida: `8968cdde462bac8ece323c383b85d575559fd105`; código estável permanece V0.31.
+- Branch candidata: `v040-artwork-block1`; PR em rascunho: https://github.com/Astabr2003BR/manga-studio-offline/pull/1.
+- Código candidato: `cb4f7464d54f83b6e211f2ca1b19b88400c45d46`; testes: `8cfb733aa9d98b927582cb7b43148e985e9d5404`; CI: `22e04ff71cde6ceb508f2a8bde8dc9c71e92db1b`.
+- Recuperadas e inspecionadas páginas editoriais V0.30 e V0.31 dos artefatos originais; persistem rigidez da mão livre e manchas/interseções junto ao cobertor. Mantida a identidade visual do personagem e o modo story (V0.30).
+- Alteração candidata: articulação suave da mão livre sentada somente em story2, reposicionamento dos travesseiros e separação da superfície detalhada do cobertor; preserva configurações clássicas e dados. Testes adicionais verificam oito articulações, restauração de pose/posição de travesseiros e determinismo de renderização.
+- CI real da candidata: https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43896292213. Builds do motor e editor concluídos com sucesso; testes gráficos ainda em execução neste registro. Não declarar aprovação de renderização antes dos resultados.
+- Ambiente local desta conversa não disponibilizou WebGL 2 no Chromium; nenhuma renderização local aprovada. A validação gráfica depende do CI real e dos PNGs produzidos. Android físico permanece pendente.
+- Sem merge, APK/AAB, custos, serviços externos ou alteração de schema. Próximo passo: recuperar resultados e artefatos da candidata; comparar página editorial com V0.30 e V0.31; se necessário corrigir e repetir, antes de promover.
