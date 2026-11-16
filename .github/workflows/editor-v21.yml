@@ -1,4 +1,4 @@
-name: Manga Studio V0.25 integrated editor
+name: Manga Studio V0.26 integrated editor
 on:
   push:
     branches: [main]
@@ -30,7 +30,7 @@ jobs:
       - run: node editor-v21/test.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: manga-studio-v25-integrated
+          name: manga-studio-v26-integrated
           path: |
             editor-v21/dist/
             editor-v21/evidence/
