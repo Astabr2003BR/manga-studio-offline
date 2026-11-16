@@ -46,7 +46,21 @@ export function createStudio(canvas){
  round(1.79,.13,1.63,0,.54,.19,0x304669,bed,.055);
  round(1.79,.85,.13,0,.67,-1.03,0x453c4c,bed,.045);
  for(const xx of [-.45,.45]){const p=round(.74,.16,.44,xx,.57,-.72,0xb3bccd,bed,.075);p.rotation.x=-.12;}
- for(let i=0;i<7;i++){box(1.68,.007,.012,0,.608,-.55+i*.23,0x536483,bed);box(.012,.007,1.54,-.72+i*.24,.608,.19,0x536483,bed);}
+ const seams=new T.Group();bed.add(seams);for(let i=0;i<7;i++){box(1.68,.007,.012,0,.608,-.55+i*.23,0x536483,seams);box(.012,.007,1.54,-.72+i*.24,.608,.19,0x536483,seams);}
+ // A continuous cloth surface with shallow folds and draped edges, not separate rectangular strips.
+ const editorialBed=new T.Group();bed.add(editorialBed);editorialBed.visible=false;
+ function surface(nx,ny,point,material,parent){const positions=[],uv=[],indices=[];for(let j=0;j<=ny;j++)for(let i=0;i<=nx;i++){const u=i/nx,v=j/ny;positions.push(...point(u,v));uv.push(u,v);}for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const a=j*(nx+1)+i,b=a+1,c=a+nx+1,d=c+1;indices.push(a,c,b,b,c,d);}const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const m=new T.Mesh(g,material);parent.add(m);return m;}
+ const quiltTex=texture(512,512,c=>{c.fillStyle='#40516c';c.fillRect(0,0,512,512);for(let i=0;i<512;i+=3){c.fillStyle=i%2?'#ffffff0b':'#101d3520';c.fillRect(i,0,1,512);}for(let j=0;j<512;j+=4){c.fillStyle='#151e3914';c.fillRect(0,j,512,1);}for(let i=0;i<8;i++){c.strokeStyle='#9ca8c53b';c.lineWidth=1.5;c.beginPath();c.moveTo(0,i*64);c.lineTo(512,i*64);c.stroke();}});
+ const quiltMat=new T.MeshStandardMaterial({color:0xb9c5dd,map:quiltTex,roughness:.98,side:T.DoubleSide});
+ surface(48,28,(u,v)=>{const x=(u-.5)*1.92,z=-.625+v*1.63,edge=Math.max(0,(Math.abs(x)-.84)/.12),fold=.009*Math.sin(x*35+z*7)+.006*Math.sin(z*16-x*12);return [x,.614+fold-.20*edge*edge,z];},quiltMat,editorialBed);
+ // Curtains with modeled pleats. Keep the central window and the clock visible.
+ const curtains=new T.Group();room.add(curtains);curtains.visible=false;const curtainMat=new T.MeshStandardMaterial({color:0x314058,roughness:1,side:T.DoubleSide});
+ for(const side of [-1,1])surface(32,20,(u,v)=>{const x=-.85+side*(1.88+u*.48),y=3.32-v*2.44,z=-2.43+.055*Math.sin(u*Math.PI*8)+.035*Math.sin(v*2.5+u*4);return [x,y,z];},curtainMat,curtains);
+ // Soft contact shadows, local and deterministic; below the shoes and furniture.
+ const shadowTex=texture(128,128,c=>{const g=c.createRadialGradient(64,64,5,64,64,62);g.addColorStop(0,'rgba(9,13,25,.72)');g.addColorStop(.45,'rgba(9,13,25,.42)');g.addColorStop(1,'rgba(9,13,25,0)');c.fillStyle=g;c.fillRect(0,0,128,128);});
+ const shadows=new T.Group();room.add(shadows);shadows.visible=false;
+ function softShadow(w,h){const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:shadowTex,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}));m.rotation.x=-Math.PI/2;shadows.add(m);return m;}
+ const footShadows=[softShadow(.34,.46),softShadow(.34,.46)],bedShadow=softShadow(2.35,2.8);
  // The sitting edge is the front of the mattress, not a cube hiding the legs.
  bed.position.set(1.28,0,-1.42);
  const table=new T.Group();table.position.set(-1.47,0,-1.56);room.add(table);
@@ -147,9 +161,9 @@ export function createStudio(canvas){
  if(seated){const feet=['leftFoot','rightFoot'].map(raw).filter(Boolean);if(feet.length){vrm.scene.position.y+=.065-Math.min(...feet.map(v=>v.y));vrm.update(0);scene.updateMatrixWorld(true);}}
  const em=vrm.expressionManager;em?.resetValues();const set=(n,v)=>{if(em?.getExpression(n))em.setValue(n,v);};const names={surprise:['surprised','Surprised','aa'],sad:['sad'],worry:['sad','oh'],happy:['happy']};if(acting){if(expression==='worry'){set('sad',.42);set('angry',.16);set('oh',.12);}else if(expression==='surprise'){set(em?.getExpression('Surprised')?'Surprised':'surprised',.58);set('aa',.24);}else if(expression==='sad'){set('sad',.68);set('blink',.08);}else if(expression==='happy'){set('happy',.65);}else if(holding){set('blink',.075);}}else for(const n of names[expression]||[])set(n,n==='oh'?.22:.65);updatePose();
 
- room.visible=background==='room';scene.background=room.visible?new T.Color(0x182b48):null;
+ room.visible=background==='room';scene.background=room.visible?new T.Color(0x182b48):null;const editorial=finish==='ink';seams.visible=!editorial;editorialBed.visible=editorial;curtains.visible=editorial;shadows.visible=editorial&&room.visible;
  const hips=raw('hips'),head=raw('head'),rh=raw('rightHand'),lh=raw('leftHand');
- if(seated&&hips){bed.position.set(hips.x,hips.y-.70,hips.z-.98);}else bed.position.set(1.28,0,-1.42);
+ if(seated&&hips){bed.position.set(hips.x,hips.y-.70,hips.z-.98);}else bed.position.set(1.28,0,-1.42);if(editorial){bedShadow.position.set(bed.position.x,.002,bed.position.z);for(const [i,n] of ['leftFoot','rightFoot'].entries()){const p=raw(n);footShadows[i].visible=!!p;if(p)footShadows[i].position.set(p.x,.004,p.z+.07);}}
  phone.visible=holding&&!!rh&&!!head;
  if(phone.visible){phone.position.copy(rh);const palm=raw('rightMiddleProximal');if(palm)phone.position.lerp(palm,.76);else phone.position.y+=height*.022;phone.position.z+=.018;phone.lookAt(head);if(acting){grip=gripPhone(head,rh);headAim=orientHead(phone.position);if(vrm.lookAt){vrm.lookAt.lookAt(phone.position);vrm.lookAt.yaw=T.MathUtils.clamp(vrm.lookAt.yaw,-28,28);vrm.lookAt.pitch=T.MathUtils.clamp(vrm.lookAt.pitch,-30,30);gaze={gazeYaw:vrm.lookAt.yaw,gazePitch:vrm.lookAt.pitch,gazeApplied:true};updatePose();}}}
  screenLight.visible=acting&&phone.visible;if(screenLight.visible){screenLight.position.copy(phone.position).add(new T.Vector3(0,.045,.10).applyQuaternion(phone.quaternion));}
@@ -157,7 +171,7 @@ export function createStudio(canvas){
  const hp=vrm.humanoid.getRawBoneNode('head')?.getWorldPosition(new T.Vector3());if(!hp)throw Error('Cabeça ausente.');const target=hp.clone(),z=Math.max(1,Math.min(2.8,Number(zoom)||1)),clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,Number(v)||0));
  target.y+=height*(shot==='close'?.015:shot==='wide'?(seated?-.29:-.39):-.19)+clamp(y,-1,1)*height*.25;target.x+=clamp(x,-1,1)*height*.25;
  const d=height*(shot==='close'?(acting?.48:.63):shot==='wide'?(seated?(acting?1.55:1.45):1.85):1.25)/z,angle=T.MathUtils.degToRad(clamp(yaw,-65,65)),tilt=T.MathUtils.degToRad(clamp(pitch,-30,30));
- camera.position.set(target.x+Math.sin(angle)*d,target.y+Math.sin(tilt)*d,target.z+Math.cos(angle)*Math.cos(tilt)*d);camera.lookAt(target);const mask=finish==='ink'?silhouette(width,h):null;renderer.render(scene,camera);lastDiagnostics={finish,artCount,...grip,...gaze,...headAim,screenIntensity:screenLight.visible?screenLight.intensity:0,inkMask:!!mask,fabricTextures:fabricMaps.size,seated,phoneVisible:phone.visible,hipY:hips?.y??null,bedTop:bed.position.y+.608,handDistance:rh&&phone.visible?rh.distanceTo(phone.position):null,footY:raw('leftFoot')?.y??null,kneeForward:(raw('leftLowerLeg')?.z??0)-(raw('leftUpperLeg')?.z??0)};return finishFrame(width,h,finish,room.visible,mask);
+ camera.position.set(target.x+Math.sin(angle)*d,target.y+Math.sin(tilt)*d,target.z+Math.cos(angle)*Math.cos(tilt)*d);camera.lookAt(target);const mask=finish==='ink'?silhouette(width,h):null;renderer.render(scene,camera);lastDiagnostics={finish,artCount,...grip,...gaze,...headAim,screenIntensity:screenLight.visible?screenLight.intensity:0,inkMask:!!mask,fabricTextures:fabricMaps.size,editorialRoom:editorial&&room.visible,contactShadows:editorial&&room.visible?footShadows.filter(x=>x.visible).length:0,seated,phoneVisible:phone.visible,hipY:hips?.y??null,bedTop:bed.position.y+.608,handDistance:rh&&phone.visible?rh.distanceTo(phone.position):null,footY:raw('leftFoot')?.y??null,kneeForward:(raw('leftLowerLeg')?.z??0)-(raw('leftUpperLeg')?.z??0)};return finishFrame(width,h,finish,room.visible,mask);
  }
  let lastDiagnostics=null;
  function dispose(){if(disposed)return;disposed=true;canvas.removeEventListener('webglcontextlost',lostFn);canvas.removeEventListener('webglcontextrestored',restoreFn);if(vrm){restoreFabric();scene.remove(vrm.scene);VRMUtils.deepDispose(vrm.scene);vrm=null;}room.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.map?.dispose();o.material.dispose();}});phone.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});materialDefaults.clear();finishCanvas.width=1;finishCanvas.height=1;maskCanvas.width=1;maskCanvas.height=1;renderer.dispose();}
