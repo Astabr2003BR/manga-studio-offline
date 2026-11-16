@@ -50,7 +50,7 @@ export function createStudio(canvas){
  round(1.75,.19,2.05,0,.425,0,0x8390a6,bed,.075);
  const legacyBlanket=round(1.79,.13,1.63,0,.54,.19,0x304669,bed,.055);
  round(1.79,.85,.13,0,.67,-1.03,0x453c4c,bed,.045);
- for(const xx of [-.45,.45]){const p=round(.74,.16,.44,xx,.57,-.72,0xb3bccd,bed,.075);p.rotation.x=-.12;}
+ const bedPillows=[];for(const xx of [-.45,.45]){const p=round(.74,.16,.44,xx,.57,-.72,0xb3bccd,bed,.075);p.rotation.x=-.12;bedPillows.push(p);}
  const seams=new T.Group();bed.add(seams);for(let i=0;i<7;i++){box(1.68,.007,.012,0,.608,-.55+i*.23,0x536483,seams);box(.012,.007,1.54,-.72+i*.24,.608,.19,0x536483,seams);}
  // A continuous cloth surface with shallow folds and draped edges, not separate rectangular strips.
  const editorialBed=new T.Group();bed.add(editorialBed);editorialBed.visible=false;
@@ -63,7 +63,7 @@ export function createStudio(canvas){
  const storyQuilt=round(1.78,.13,1.63,0,.54,.19,0x304669,storyBed,.055);storyQuilt.material.map=quiltTex;storyQuilt.material.color.set(0x9fadc9);
  const oldDrape=surface(48,28,(u,v)=>{const x=(u-.5)*1.99,z=-.625+v*1.63,edge=Math.max(0,(Math.abs(x)-.84)/.155),fold=(.006*Math.sin(x*17+z*5)+.003*Math.sin(z*19-x*7))*(1-edge);return[x,.625+fold-.18*edge*edge,z];},quiltMat,storyBed);
  // Folded cloth stays above the solid mattress; draping begins outside its edge.
- const detailDrape=surface(64,36,(u,v)=>{const x=(u-.5)*2.06,z=-.625+v*1.63,e=Math.max(0,(Math.abs(x)-.91)/.12),fold=.006*Math.sin(x*20+z*7)+.004*Math.sin(z*17-x*5);return[x,.637+fold*(1-e)-.19*e*e,z];},quiltMat,storyBed);detailDrape.visible=false;
+ const detailDrape=surface(64,36,(u,v)=>{const x=(u-.5)*2.06,z=-.49+v*1.495,e=Math.max(0,(Math.abs(x)-.91)/.12),fold=.006*Math.sin(x*20+z*7)+.004*Math.sin(z*17-x*5);return[x,.637+fold*(1-e)-.19*e*e,z];},quiltMat,storyBed);detailDrape.visible=false;
  // Curtains with modeled pleats. Keep the central window and the clock visible.
  const curtains=new T.Group();room.add(curtains);curtains.visible=false;const curtainMat=new T.MeshStandardMaterial({color:0x314058,roughness:1,side:T.DoubleSide});
  for(const side of [-1,1])surface(32,20,(u,v)=>{const x=-.85+side*(1.88+u*.48),y=3.32-v*2.44,z=-2.43+.055*Math.sin(u*Math.PI*8)+.035*Math.sin(v*2.5+u*4);return [x,y,z];},curtainMat,curtains);
@@ -107,6 +107,24 @@ export function createStudio(canvas){
  }
  // A grip is articulated with existing humanoid finger bones, never with replacement geometry.
  function updatePose(){vrm.update(0);scene.updateMatrixWorld(true);}
+ // A seated free hand rests with a gentle palm-directed curl instead of straight fingers.
+ function relaxLeftHand(){
+  const hand=raw('leftHand'),middle=raw('leftMiddleProximal'),index=raw('leftIndexProximal'),little=raw('leftLittleProximal'),hip=raw('leftUpperLeg');
+  if(!hand||!middle||!index||!little||!hip)return 0;
+  const forward=middle.clone().sub(hand).normalize(),span=index.clone().sub(little).normalize(),normal=new T.Vector3().crossVectors(forward,span);
+  if(normal.lengthSq()<.01)return 0;normal.normalize();if(normal.dot(hip.clone().sub(hand))<0)normal.negate();
+  let joints=0;
+  for(const [i,name] of ['Index','Middle','Ring','Little'].entries()){
+   const prefix='left'+name,base=raw(prefix+'Proximal'),mid=raw(prefix+'Intermediate'),tip=raw(prefix+'Distal');
+   if(!base||!mid||!tip)continue;
+   const first=mid.clone().sub(base).normalize(),next=tip.clone().sub(mid).normalize();if(first.lengthSq()<.9||next.lengthSq()<.9)continue;
+   aim(prefix+'Proximal',prefix+'Intermediate',base.clone().add(first.addScaledVector(normal,.12+i*.035).normalize()));updatePose();joints++;
+   const m=raw(prefix+'Intermediate'),d=raw(prefix+'Distal');if(!m||!d)continue;
+   const bend=d.clone().sub(m).normalize().addScaledVector(normal,.20+i*.04).normalize();
+   aim(prefix+'Intermediate',prefix+'Distal',m.clone().add(bend));updatePose();joints++;
+  }
+  return joints;
+ }
  function gripPhone(head,rh,refined=false){
   let middle=raw('rightMiddleProximal'),index=raw('rightIndexProximal'),little=raw('rightLittleProximal');if(!middle||!index||!little)return {gripJoints:0,gripError:null};
   let up=middle.clone().sub(rh).normalize(),toward=head.clone().sub(middle);const normal=toward.addScaledVector(up,-toward.dot(up)).normalize();if(normal.lengthSq()<.9)return {gripJoints:0,gripError:null};
@@ -171,7 +189,7 @@ export function createStudio(canvas){
  finishCtx.putImageData(image,0,0);return finishCanvas.toDataURL('image/png');}
  function draw({pose='stand',expression='neutral',shot='medium',yaw=0,pitch=0,zoom=1,x=0,y=0,light='dramatic',background='room',aspect=1.6,finish='original',direction='classic'}={}){
  check();if(!vrm)throw Error('Importe um avatar.');const a=Math.max(.8,Math.min(3,Number(aspect)||1.6)),width=1024,h=Math.round(width/a);renderer.setSize(width,h,false);camera.aspect=width/h;camera.updateProjectionMatrix();vrm.humanoid.resetNormalizedPose();vrm.scene.position.set(0,0,0);
- const detail=direction==='story2',story=direction==='story'||detail;const artCount=artMaterials(finish);const seated=pose==='sit';const holding=pose==='phone'||seated;const acting=['cinema','ink','studio','film'].includes(finish),film=finish==='film';let grip={gripJoints:0,gripError:null},gaze={gazeYaw:0,gazePitch:0,gazeApplied:false},headAim={headAngleBefore:null,headAngleAfter:null};if(vrm.lookAt){vrm.lookAt.target=null;vrm.lookAt.reset();}
+ const detail=direction==='story2',story=direction==='story'||detail;let relaxedHandJoints=0;const artCount=artMaterials(finish);const seated=pose==='sit';const holding=pose==='phone'||seated;const acting=['cinema','ink','studio','film'].includes(finish),film=finish==='film';let grip={gripJoints:0,gripError:null},gaze={gazeYaw:0,gazePitch:0,gazeApplied:false},headAim={headAngleBefore:null,headAngleAfter:null};if(vrm.lookAt){vrm.lookAt.target=null;vrm.lookAt.reset();}
  bone('leftUpperArm',0,0,1.15);bone('rightUpperArm',0,0,-1.15);bone('leftLowerArm',-.08,0,0);bone('rightLowerArm',-.10,0,0);
  if(seated){bone('spine',.12,0,0);vrm.update(0);scene.updateMatrixWorld(true);for(const side of ['left','right']){const hip=raw(side+'UpperLeg');if(!hip)continue;aim(side+'UpperLeg',side+'LowerLeg',hip.clone().add(new T.Vector3(0,-height*.035,height*.30)));vrm.update(0);scene.updateMatrixWorld(true);const knee=raw(side+'LowerLeg');if(knee)aim(side+'LowerLeg',side+'Foot',knee.clone().add(new T.Vector3(0,-height*.30,height*.015)));}}
  if(pose==='walk'){bone('leftUpperLeg',-.32,0,0);bone('rightUpperLeg',.32,0,0);bone('rightLowerLeg',.25,0,0);bone('leftUpperArm',.24,0,1.15);bone('rightUpperArm',-.24,0,-1.15);}
@@ -191,9 +209,10 @@ export function createStudio(canvas){
  }
  vrm.update(0);scene.updateMatrixWorld(true);
  if(seated){const feet=['leftFoot','rightFoot'].map(raw).filter(Boolean);if(feet.length){vrm.scene.position.y+=.065-Math.min(...feet.map(v=>v.y));vrm.update(0);scene.updateMatrixWorld(true);}}
+ if(detail&&seated)relaxedHandJoints=relaxLeftHand();
  const em=vrm.expressionManager;em?.resetValues();const set=(n,v)=>{if(em?.getExpression(n))em.setValue(n,v);};const names={surprise:['surprised','Surprised','aa'],sad:['sad'],worry:['sad','oh'],happy:['happy']};if(acting){if(expression==='worry'){set('sad',film?.25:.42);set('angry',film?.08:.16);set('oh',film?.07:.12);}else if(expression==='surprise'){set(em?.getExpression('Surprised')?'Surprised':'surprised',.58);set('aa',.24);}else if(expression==='sad'){set('sad',.68);set('blink',.08);}else if(expression==='happy'){set('happy',.65);}else if(holding){set('blink',.075);}}else for(const n of names[expression]||[])set(n,n==='oh'?.22:.65);updatePose();
 
- room.visible=background==='room';scene.background=room.visible?new T.Color(0x182b48):null;const editorial=['ink','studio','film'].includes(finish);seams.visible=!editorial&&!story;editorialBed.visible=editorial&&!story;legacyBlanket.visible=!story;storyBed.visible=story;oldDrape.visible=!detail;detailDrape.visible=detail;curtains.visible=editorial||story;shadows.visible=(editorial||story)&&room.visible;pane.material.map=story?storyCity:city;
+ room.visible=background==='room';scene.background=room.visible?new T.Color(0x182b48):null;const editorial=['ink','studio','film'].includes(finish);seams.visible=!editorial&&!story;editorialBed.visible=editorial&&!story;legacyBlanket.visible=!story;storyBed.visible=story;oldDrape.visible=!detail;detailDrape.visible=detail;for(const pillow of bedPillows)pillow.position.y=detail?.70:.57;curtains.visible=editorial||story;shadows.visible=(editorial||story)&&room.visible;pane.material.map=story?storyCity:city;
  const hips=raw('hips'),head=raw('head'),rh=raw('rightHand'),lh=raw('leftHand');
  if(seated&&hips){bed.position.set(hips.x,hips.y-.70,hips.z-.98);}else bed.position.set(1.28,0,-1.42);if(editorial||story){bedShadow.position.set(bed.position.x,.002,bed.position.z);for(const [i,n] of ['leftFoot','rightFoot'].entries()){const p=raw(n);footShadows[i].visible=!!p;if(p)footShadows[i].position.set(p.x,.004,p.z+.07);}}
  phone.visible=holding&&!!rh&&!!head;phone.scale.setScalar(detail?.94:1);phoneDetails.visible=detail&&phone.visible;
@@ -203,7 +222,7 @@ export function createStudio(canvas){
  const hp=vrm.humanoid.getRawBoneNode('head')?.getWorldPosition(new T.Vector3());if(!hp)throw Error('Cabeça ausente.');const target=hp.clone(),z=Math.max(1,Math.min(2.8,Number(zoom)||1)),clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,Number(v)||0));
  target.y+=height*(shot==='close'?.015:shot==='wide'?(seated?-.29:-.39):-.19)+clamp(y,-1,1)*height*.25;target.x+=clamp(x,-1,1)*height*.25;if(story){target.x+=height*(shot==='close'?-.105:.13);if(shot==='close')target.y-=height*.045;}
  const d=height*(shot==='close'?(film?.56:acting?.48:.63):shot==='wide'?(seated?(acting?1.55:1.45):1.85):1.25)/z,angle=T.MathUtils.degToRad(clamp((Number(yaw)||0)+(story?(shot==='close'?-12:12):0),-65,65)),tilt=T.MathUtils.degToRad(clamp((Number(pitch)||0)+(story&&shot==='close'?-4:0),-30,30));
- camera.position.set(target.x+Math.sin(angle)*d,target.y+Math.sin(tilt)*d,target.z+Math.cos(angle)*Math.cos(tilt)*d);camera.lookAt(target);camera.updateMatrixWorld(true);const headScreen=hp.clone().project(camera);const mask=editorial?silhouette(width,h):null;renderer.render(scene,camera);lastDiagnostics={finish,direction:detail?'story2':story?'story':'classic',detailDrape:detail&&room.visible,phoneDetails:phoneDetails.visible,headScreenX:headScreen.x,storyRoom:story&&room.visible,artCount,...grip,...gaze,...headAim,screenIntensity:screenLight.visible?screenLight.intensity:0,inkMask:!!mask,fabricTextures:fabricMaps.size,portraitTextures:Array.from(portraitMaps.values()).reduce((n,m)=>n+m.size,0),filmLighting:film,skinOutlineRatio:film?.38:1,editorialRoom:editorial&&room.visible,contactShadows:editorial&&room.visible?footShadows.filter(x=>x.visible).length:0,seated,phoneVisible:phone.visible,hipY:hips?.y??null,bedTop:bed.position.y+.608,handDistance:rh&&phone.visible?rh.distanceTo(phone.position):null,footY:raw('leftFoot')?.y??null,kneeForward:(raw('leftLowerLeg')?.z??0)-(raw('leftUpperLeg')?.z??0)};return finishFrame(width,h,finish,room.visible,mask);
+ camera.position.set(target.x+Math.sin(angle)*d,target.y+Math.sin(tilt)*d,target.z+Math.cos(angle)*Math.cos(tilt)*d);camera.lookAt(target);camera.updateMatrixWorld(true);const headScreen=hp.clone().project(camera);const mask=editorial?silhouette(width,h):null;renderer.render(scene,camera);lastDiagnostics={finish,direction:detail?'story2':story?'story':'classic',detailDrape:detail&&room.visible,relaxedHandJoints,pillowHeight:bedPillows[0].position.y,phoneDetails:phoneDetails.visible,headScreenX:headScreen.x,storyRoom:story&&room.visible,artCount,...grip,...gaze,...headAim,screenIntensity:screenLight.visible?screenLight.intensity:0,inkMask:!!mask,fabricTextures:fabricMaps.size,portraitTextures:Array.from(portraitMaps.values()).reduce((n,m)=>n+m.size,0),filmLighting:film,skinOutlineRatio:film?.38:1,editorialRoom:editorial&&room.visible,contactShadows:editorial&&room.visible?footShadows.filter(x=>x.visible).length:0,seated,phoneVisible:phone.visible,hipY:hips?.y??null,bedTop:bed.position.y+.608,handDistance:rh&&phone.visible?rh.distanceTo(phone.position):null,footY:raw('leftFoot')?.y??null,kneeForward:(raw('leftLowerLeg')?.z??0)-(raw('leftUpperLeg')?.z??0)};return finishFrame(width,h,finish,room.visible,mask);
  }
  let lastDiagnostics=null;
  function dispose(){if(disposed)return;disposed=true;canvas.removeEventListener('webglcontextlost',lostFn);canvas.removeEventListener('webglcontextrestored',restoreFn);if(vrm){restoreFabric();scene.remove(vrm.scene);VRMUtils.deepDispose(vrm.scene);vrm=null;}room.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.map?.dispose();o.material.dispose();}});phone.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.map?.dispose();o.material.dispose();}});materialDefaults.clear();city.dispose();storyCity.dispose();finishCanvas.width=1;finishCanvas.height=1;maskCanvas.width=1;maskCanvas.height=1;renderer.dispose();}
