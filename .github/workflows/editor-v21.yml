@@ -1,4 +1,4 @@
-name: Manga Studio V0.31 integrated editor
+name: Manga Studio integrated regression
 on:
   push:
     branches: [main]
@@ -10,7 +10,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: manga-editor-v21
+  group: manga-editor-v21-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   validate:
