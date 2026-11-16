@@ -6,4 +6,4 @@ function replace(a,b){if(html.split(a).length!==2)throw Error('Missing or duplic
 replace('<!-- VRM_BUNDLE -->','<script>window.MANGA_VRM_OFFLINE=true;'+escape(runtime)+'</script><script type="application/octet-stream" id="vrm-embedded-model">'+model.toString('base64')+'</script>');
 for(const f of ['panel-vrm.js','commands.js','web.js'])replace('<script src="./'+f+'"></script>','<script>'+escape(await readFile(join(root,f),'utf8'))+'</script>');
 html=html.replace('<link rel="manifest" href="./manifest.webmanifest">','').replace(/<script type="importmap">[\s\S]*?<\/script>/,'');
-await mkdir(join(root,'dist'),{recursive:true});await writeFile(join(root,'dist/Manga-Studio-Offline-v0.30.html'),html);await copyFile(join(lab,'ASSETS.md'),join(root,'dist/ASSETS.md'));console.log('PORTABLE_BUILD_OK',Buffer.byteLength(html));
+await mkdir(join(root,'dist'),{recursive:true});await writeFile(join(root,'dist/Manga-Studio-Offline-v0.31.html'),html);await copyFile(join(lab,'ASSETS.md'),join(root,'dist/ASSETS.md'));console.log('PORTABLE_BUILD_OK',Buffer.byteLength(html));

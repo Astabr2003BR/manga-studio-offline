@@ -10,5 +10,5 @@ const vrm={key,layer};checkIllustrationBudget({...owner,panels:owner.panels.map(
 }catch(e){candidate?.dispose();release();pruneIllustrations();msg.textContent='Falha VRM: '+String(e.message||e)+' Projeto preservado.';}finally{busy=false;btn.disabled=false;}};
 for(const k of ['zoom','x','y'])document.getElementById('vrm-panel-'+k).addEventListener('input',e=>{const p=project.panels[active];p.framing=cleanFraming({...p.framing,[k]:Number(e.target.value)});render();});
 document.getElementById('vrm-finish').addEventListener('change',e=>{const p=project.panels[active];if(['cinema','ink','studio','film'].includes(e.target.value))p.finish=e.target.value;else delete p.finish;render();});
-document.getElementById('vrm-direction').addEventListener('change',e=>{const p=project.panels[active];if(e.target.value==='story')p.direction='story';else delete p.direction;render();});
+document.getElementById('vrm-direction').addEventListener('change',e=>{const p=project.panels[active];if(['story','story2'].includes(e.target.value))p.direction=e.target.value;else delete p.direction;render();});
 window.addEventListener('pagehide',release);})();
