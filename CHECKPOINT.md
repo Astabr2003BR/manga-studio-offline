@@ -99,3 +99,9 @@ Gratuito/offline, sem IA generativa no aplicativo, sem créditos, mensalidades o
 - PNG real comparado com V0.30/V0.31: mão livre ligeiramente mais relaxada; travesseiros elevados demais e manchas escuras do cobertor persistem. Candidata 1 reprovada parcialmente no QA visual, apesar do CI verde. Não promover.
 - Candidata 2: `d998bb2287469fb4e9f270b55ca68011bc9adc65` substitui a dupla superfície do cobertor detalhado por malha fechada única com bordas deformadas, mantém story clássico e reduz altura dos travesseiros para .60; conserva a mão relaxada. Testes atualizados em `c293d9aa83445e8688fcd47c9e21b8c9c239a971` para camada única, altura e restauração legada. Regressão desta candidata ainda não confirmada neste registro.
 - Próxima ação: consultar CI do HEAD `c293d9aa83445e8688fcd47c9e21b8c9c239a971` no PR #1, baixar novo PNG, inspecionar cobertor, travesseiros e mão. Não confundir CI anterior com o HEAD atualizado. V0.31 continua estável; não renomear a entrega V0.40 até consolidar os demais blocos.
+
+### Regressão da segunda candidata
+
+- CI intermediário `43896956051` (commit `d998bb2`) falhou por rodar o teste antigo que esperava altura .70; valor obtido .60. Não é falha ignorada: a expectativa foi atualizada no commit `c293d9a` e inclui também a verificação de uma malha fechada e restauração de duas camadas em story.
+- CI isolado por ref em `4282ecaa2b29ddcd72e650600f0902060c2baaca`, para que validações de main e PR não se cancelem entre si. PR #1 foi fechado/reaberto (mesmo PR, rascunho) exclusivamente para disparar o CI do HEAD correto; sem merge.
+- Execução real da segunda candidata: https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43897230516 (HEAD `4282ecaa2b29ddcd72e650600f0902060c2baaca`, em execução neste registro). Aguardam-se motor, editor e PNG desta execução antes de aprovação visual/técnica.
