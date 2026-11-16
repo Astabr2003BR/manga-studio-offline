@@ -59,6 +59,7 @@ export function createStudio(canvas){
  const phone=new T.Group();scene.add(phone);round(.071,.145,.012,0,0,0,0x151b25,phone,.009);
  const screen=texture(256,512,c=>{c.fillStyle='#101c32';c.fillRect(0,0,256,512);c.fillStyle='#d2e9ff';c.font='bold 38px sans-serif';c.fillText('03:00',72,70);c.fillStyle='#355778';c.fillRect(18,117,220,100);c.fillStyle='#e2eefc';c.font='22px sans-serif';c.fillText('Quem está aí?',27,157);c.fillStyle='#80b3e4';c.fillRect(90,473,76,5);});
  const screenMesh=new T.Mesh(new T.PlaneGeometry(.061,.129),new T.MeshBasicMaterial({map:screen}));screenMesh.position.z=.007;phone.add(screenMesh);phone.visible=false;
+ const screenLight=new T.PointLight(0x8dbdff,.16,.42,2);scene.add(screenLight);screenLight.visible=false;
  const materialDefaults=new Map();
  let vrm=null,height=0,disposed=false,lost=false,busy=false;const lostFn=e=>{e.preventDefault();lost=true;};const restoreFn=()=>{lost=false;};canvas.addEventListener('webglcontextlost',lostFn);canvas.addEventListener('webglcontextrestored',restoreFn);
  const check=()=>{if(disposed||lost)throw Error('Motor gráfico indisponível.');};
@@ -67,6 +68,24 @@ export function createStudio(canvas){
  function bone(n,x=0,y=0,z=0){const b=vrm.humanoid.getNormalizedBoneNode(n);if(b)b.rotation.set(x,y,z);}
  function raw(n){return vrm.humanoid.getRawBoneNode(n)?.getWorldPosition(new T.Vector3());}
  function aim(n,child,target){const b=vrm.humanoid.getNormalizedBoneNode(n),c=vrm.humanoid.getNormalizedBoneNode(child);if(!b||!c||!b.parent)return; b.updateWorldMatrix(true,false);c.updateWorldMatrix(true,false);const p=b.getWorldPosition(new T.Vector3()),q=c.getWorldPosition(new T.Vector3());const from=q.sub(p).normalize(),to=target.clone().sub(p).normalize();if(from.lengthSq()<.9||to.lengthSq()<.9)return;const delta=new T.Quaternion().setFromUnitVectors(from,to),world=b.getWorldQuaternion(new T.Quaternion());const parent=b.parent.getWorldQuaternion(new T.Quaternion()).invert();b.quaternion.copy(parent.multiply(delta.multiply(world)));b.updateWorldMatrix(true,true);}
+ // A grip is articulated with existing humanoid finger bones, never with replacement geometry.
+ function updatePose(){vrm.update(0);scene.updateMatrixWorld(true);}
+ function gripPhone(head,rh){
+  const middle=raw('rightMiddleProximal'),index=raw('rightIndexProximal'),little=raw('rightLittleProximal');if(!middle||!index||!little)return {gripJoints:0,gripError:null};
+  const up=middle.clone().sub(rh).normalize(),toward=head.clone().sub(middle);const normal=toward.addScaledVector(up,-toward.dot(up)).normalize();if(normal.lengthSq()<.9)return {gripJoints:0,gripError:null};
+  const right=new T.Vector3().crossVectors(up,normal).normalize();normal.crossVectors(right,up).normalize();phone.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(right,up,normal));
+  phone.position.copy(middle).addScaledVector(up,.017).addScaledVector(normal,.023);
+  const width=.071,half=width*.5;let joints=0,distances=[];
+  for(const name of ['Index','Middle','Ring','Little']){const prefix='right'+name,base=raw(prefix+'Proximal'),mid=raw(prefix+'Intermediate'),tip=raw(prefix+'Distal');if(!base||!mid||!tip)continue;
+   const side=base.clone().sub(phone.position).dot(right)>=0?1:-1,edge=phone.position.clone().addScaledVector(right,side*(half+.008));
+   // Curl first phalanx toward the side of the handset; the next folds over the edge.
+   const direction=mid.clone().sub(base).normalize().multiplyScalar(.55).add(normal.clone().multiplyScalar(.75)).add(right.clone().multiplyScalar(-side*.19)).normalize();
+   aim(prefix+'Proximal',prefix+'Intermediate',base.clone().add(direction));updatePose();joints++;
+   const m=raw(prefix+'Intermediate');if(m){const towardEdge=edge.clone().addScaledVector(up,(base.clone().sub(middle).dot(up))*.6).addScaledVector(normal,.018);aim(prefix+'Intermediate',prefix+'Distal',towardEdge);updatePose();joints++;const d=raw(prefix+'Distal');if(d)distances.push(d.distanceTo(edge));}
+  }
+  const thumb=raw('rightThumbProximal');if(thumb&&raw('rightThumbDistal')){const side=thumb.clone().sub(phone.position).dot(right)>=0?1:-1;aim('rightThumbProximal','rightThumbDistal',phone.position.clone().addScaledVector(right,side*.024).addScaledVector(up,-.025).addScaledVector(normal,.013));updatePose();joints++;}
+  return {gripJoints:joints,gripError:distances.length?Math.max(...distances):null};
+ }
  // Preserve each imported avatar's own material values. Only the bundled sample's top is recolored.
  function artMaterials(finish){let count=0;for(const [m,d] of materialDefaults){if(d.color&&m.color)m.color.copy(d.color);m.shadeColorFactor.copy(d.shade);m.shadingToonyFactor=d.toony;m.shadingShiftFactor=d.shift;m.giEqualizationFactor=d.gi;if(d.rim&&m.parametricRimColorFactor)m.parametricRimColorFactor.copy(d.rim);m.rimLightingMixFactor=d.rimMix;if(finish!=='cinema')continue;count++;const name=m.name||'';const face=/Face_00_SKIN|Body_00_SKIN/.test(name),cloth=/CLOTH/.test(name),hair=/HAIR/.test(name);if(face||cloth||hair){m.shadingToonyFactor=.82;m.shadingShiftFactor=-.12;m.giEqualizationFactor=hair?.50:.32;m.shadeColorFactor.multiplyScalar(face?.79:.68);if(m.parametricRimColorFactor)m.parametricRimColorFactor.set(hair?0x202c40:0x263447);m.rimLightingMixFactor=.85;}if(/M00_006_01_Tops_01_CLOTH/.test(name)&&m.color){m.color.multiply(new T.Color(0x596c92));m.shadeColorFactor.multiply(new T.Color(0x7189bd));}}return count;}
  // Non-generative, bounded image finishing. Alpha remains unchanged for compositing.
@@ -80,12 +99,12 @@ export function createStudio(canvas){
  finishCtx.putImageData(image,0,0);return finishCanvas.toDataURL('image/png');}
  function draw({pose='stand',expression='neutral',shot='medium',yaw=0,pitch=0,zoom=1,x=0,y=0,light='dramatic',background='room',aspect=1.6,finish='original'}={}){
  check();if(!vrm)throw Error('Importe um avatar.');const a=Math.max(.8,Math.min(3,Number(aspect)||1.6)),width=1024,h=Math.round(width/a);renderer.setSize(width,h,false);camera.aspect=width/h;camera.updateProjectionMatrix();vrm.humanoid.resetNormalizedPose();vrm.scene.position.set(0,0,0);
- const artCount=artMaterials(finish);const seated=pose==='sit';const holding=pose==='phone'||seated;
+ const artCount=artMaterials(finish);const seated=pose==='sit';const holding=pose==='phone'||seated;const acting=finish==='cinema';let grip={gripJoints:0,gripError:null},gaze={gazeYaw:0,gazePitch:0,gazeApplied:false};if(vrm.lookAt){vrm.lookAt.target=null;vrm.lookAt.reset();}
  bone('leftUpperArm',0,0,1.15);bone('rightUpperArm',0,0,-1.15);bone('leftLowerArm',-.08,0,0);bone('rightLowerArm',-.10,0,0);
  if(seated){bone('spine',.12,0,0);vrm.update(0);scene.updateMatrixWorld(true);for(const side of ['left','right']){const hip=raw(side+'UpperLeg');if(!hip)continue;aim(side+'UpperLeg',side+'LowerLeg',hip.clone().add(new T.Vector3(0,-height*.035,height*.30)));vrm.update(0);scene.updateMatrixWorld(true);const knee=raw(side+'LowerLeg');if(knee)aim(side+'LowerLeg',side+'Foot',knee.clone().add(new T.Vector3(0,-height*.30,height*.015)));}}
  if(pose==='walk'){bone('leftUpperLeg',-.32,0,0);bone('rightUpperLeg',.32,0,0);bone('rightLowerLeg',.25,0,0);bone('leftUpperArm',.24,0,1.15);bone('rightUpperArm',-.24,0,-1.15);}
  if(holding){
-  bone('head',finish==='cinema'?.29:.18,finish==='cinema'?-.14:-.08,0);vrm.update(0);scene.updateMatrixWorld(true);
+  bone('head',acting?.32:.18,acting?-.14:-.08,acting?.035:0);vrm.update(0);scene.updateMatrixWorld(true);
   // One-handed phone pose: elbow remains close to the side, not across the chest.
   const shoulder=raw('rightUpperArm'),other=raw('leftUpperArm');
   if(shoulder&&other){const inward=other.clone().sub(shoulder).normalize();
@@ -100,18 +119,19 @@ export function createStudio(canvas){
  }
  vrm.update(0);scene.updateMatrixWorld(true);
  if(seated){const feet=['leftFoot','rightFoot'].map(raw).filter(Boolean);if(feet.length){vrm.scene.position.y+=.065-Math.min(...feet.map(v=>v.y));vrm.update(0);scene.updateMatrixWorld(true);}}
- const em=vrm.expressionManager;em?.resetValues();const names={surprise:['surprised','Surprised','aa'],sad:['sad'],worry:['sad','oh'],happy:['happy']};for(const n of names[expression]||[])if(em?.getExpression(n))em.setValue(n,n==='oh'?.22:.65);vrm.update(0);scene.updateMatrixWorld(true);
+ const em=vrm.expressionManager;em?.resetValues();const set=(n,v)=>{if(em?.getExpression(n))em.setValue(n,v);};const names={surprise:['surprised','Surprised','aa'],sad:['sad'],worry:['sad','oh'],happy:['happy']};if(acting){if(expression==='worry'){set('sad',.42);set('angry',.16);set('oh',.12);}else if(expression==='surprise'){set(em?.getExpression('Surprised')?'Surprised':'surprised',.58);set('aa',.24);}else if(expression==='sad'){set('sad',.68);set('blink',.08);}else if(expression==='happy'){set('happy',.65);}else if(holding){set('blink',.075);}}else for(const n of names[expression]||[])set(n,n==='oh'?.22:.65);updatePose();
 
  room.visible=background==='room';scene.background=room.visible?new T.Color(0x182b48):null;
  const hips=raw('hips'),head=raw('head'),rh=raw('rightHand'),lh=raw('leftHand');
  if(seated&&hips){bed.position.set(hips.x,hips.y-.70,hips.z-.98);}else bed.position.set(1.28,0,-1.42);
  phone.visible=holding&&!!rh&&!!head;
- if(phone.visible){phone.position.copy(rh);const palm=raw('rightMiddleProximal');if(palm)phone.position.lerp(palm,.76);else phone.position.y+=height*.022;phone.position.z+=.018;phone.lookAt(head);}
+ if(phone.visible){phone.position.copy(rh);const palm=raw('rightMiddleProximal');if(palm)phone.position.lerp(palm,.76);else phone.position.y+=height*.022;phone.position.z+=.018;phone.lookAt(head);if(acting){grip=gripPhone(head,rh);if(vrm.lookAt){vrm.lookAt.lookAt(phone.position);vrm.lookAt.yaw=T.MathUtils.clamp(vrm.lookAt.yaw,-28,28);vrm.lookAt.pitch=T.MathUtils.clamp(vrm.lookAt.pitch,-30,30);gaze={gazeYaw:vrm.lookAt.yaw,gazePitch:vrm.lookAt.pitch,gazeApplied:true};updatePose();}}}
+ screenLight.visible=acting&&phone.visible;if(screenLight.visible){screenLight.position.copy(phone.position).add(new T.Vector3(0,.025,.035).applyQuaternion(phone.quaternion));}
  key.color.set(light==='cool'?0xaccbff:0xffcba0);key.intensity=light==='warm'?2.1:1.65;rim.intensity=light==='warm'?.5:2.0;fill.intensity=light==='cool'?.8:.45;if(finish==='cinema'){key.intensity*=.78;fill.intensity*=.7;rim.intensity*=1.18;}
  const hp=vrm.humanoid.getRawBoneNode('head')?.getWorldPosition(new T.Vector3());if(!hp)throw Error('Cabeça ausente.');const target=hp.clone(),z=Math.max(1,Math.min(2.8,Number(zoom)||1)),clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,Number(v)||0));
  target.y+=height*(shot==='close'?.015:shot==='wide'?(seated?-.29:-.39):-.19)+clamp(y,-1,1)*height*.25;target.x+=clamp(x,-1,1)*height*.25;
- const d=height*(shot==='close'?.63:shot==='wide'?(seated?1.45:1.85):1.25)/z,angle=T.MathUtils.degToRad(clamp(yaw,-65,65)),tilt=T.MathUtils.degToRad(clamp(pitch,-30,30));
- camera.position.set(target.x+Math.sin(angle)*d,target.y+Math.sin(tilt)*d,target.z+Math.cos(angle)*Math.cos(tilt)*d);camera.lookAt(target);renderer.render(scene,camera);lastDiagnostics={finish,artCount,seated,phoneVisible:phone.visible,hipY:hips?.y??null,bedTop:bed.position.y+.608,handDistance:rh&&phone.visible?rh.distanceTo(phone.position):null,footY:raw('leftFoot')?.y??null,kneeForward:(raw('leftLowerLeg')?.z??0)-(raw('leftUpperLeg')?.z??0)};return finishFrame(width,h,finish,room.visible);
+ const d=height*(shot==='close'?.63:shot==='wide'?(seated?(acting?1.55:1.45):1.85):1.25)/z,angle=T.MathUtils.degToRad(clamp(yaw,-65,65)),tilt=T.MathUtils.degToRad(clamp(pitch,-30,30));
+ camera.position.set(target.x+Math.sin(angle)*d,target.y+Math.sin(tilt)*d,target.z+Math.cos(angle)*Math.cos(tilt)*d);camera.lookAt(target);renderer.render(scene,camera);lastDiagnostics={finish,artCount,...grip,...gaze,seated,phoneVisible:phone.visible,hipY:hips?.y??null,bedTop:bed.position.y+.608,handDistance:rh&&phone.visible?rh.distanceTo(phone.position):null,footY:raw('leftFoot')?.y??null,kneeForward:(raw('leftLowerLeg')?.z??0)-(raw('leftUpperLeg')?.z??0)};return finishFrame(width,h,finish,room.visible);
  }
  let lastDiagnostics=null;
  function dispose(){if(disposed)return;disposed=true;canvas.removeEventListener('webglcontextlost',lostFn);canvas.removeEventListener('webglcontextrestored',restoreFn);if(vrm){scene.remove(vrm.scene);VRMUtils.deepDispose(vrm.scene);vrm=null;}room.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.map?.dispose();o.material.dispose();}});phone.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});materialDefaults.clear();finishCanvas.width=1;finishCanvas.height=1;renderer.dispose();}
