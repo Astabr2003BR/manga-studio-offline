@@ -173,7 +173,7 @@ export function createStudio(canvas){
    // Curl first phalanx toward the side of the handset; the next folds over the edge.
    const direction=mid.clone().sub(base).normalize().multiplyScalar(refined?.72:.55).add(normal.clone().multiplyScalar(refined?.55:.75)).add(right.clone().multiplyScalar(refined?side*.12:-side*.19)).normalize();
    aim(prefix+'Proximal',prefix+'Intermediate',base.clone().add(direction));updatePose();joints++;
-   const m=raw(prefix+'Intermediate');if(m){const towardEdge=edge.clone().addScaledVector(up,(base.clone().sub(middle).dot(up))*.6).addScaledVector(normal,refined?.007:.018);aim(prefix+'Intermediate',prefix+'Distal',towardEdge);updatePose();joints++;const d=raw(prefix+'Distal');if(d){distances.push(d.distanceTo(edge));if(refined){const rel=d.clone().sub(phone.position),dx=Math.max(0,Math.abs(rel.dot(right))-half),dy=Math.max(0,Math.abs(rel.dot(up))-.145*phone.scale.y*.5),dz=Math.max(0,Math.abs(rel.dot(normal))-.006*phone.scale.z);contacts.push(Math.hypot(dx,dy,dz));}}}
+   const m=raw(prefix+'Intermediate');if(m){const towardEdge=edge.clone().addScaledVector(up,(base.clone().sub(middle).dot(up))*.6).addScaledVector(normal,refined?-.003:.018);aim(prefix+'Intermediate',prefix+'Distal',towardEdge);updatePose();joints++;const d=raw(prefix+'Distal');if(d){distances.push(d.distanceTo(edge));if(refined){const rel=d.clone().sub(phone.position),dx=Math.max(0,Math.abs(rel.dot(right))-half),dy=Math.max(0,Math.abs(rel.dot(up))-.145*phone.scale.y*.5),dz=Math.max(0,Math.abs(rel.dot(normal))-.006*phone.scale.z);contacts.push(Math.hypot(dx,dy,dz));}}}
   }
   const thumb=raw('rightThumbMetacarpal'),thumbMid=raw('rightThumbProximal'),thumbDistal=raw('rightThumbDistal');
   if(refined&&thumb&&thumbMid&&thumbDistal){
