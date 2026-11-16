@@ -181,7 +181,21 @@ export function createStudio(canvas){
     const towardEdge=refined
      ?phone.position.clone().addScaledVector(right,side*(half+sideGap)).addScaledVector(up,edgeY).addScaledVector(normal,-.003)
      :edge.clone().addScaledVector(up,(base.clone().sub(middle).dot(up))*.6).addScaledVector(normal,.018);
-    if(refined)fingerTargets.push({name,height:edgeY,sideGap});
+    if(refined){
+     const proximalBase=raw(prefix+'Proximal');
+     if(proximalBase){
+      const first=m.clone().sub(proximalBase).normalize(),second=towardEdge.clone().sub(m).normalize();
+      // Anatomical guard: a distal segment must not reverse against the
+      // preceding segment just to reach the geometric phone edge.
+      const angle=first.angleTo(second),maxBend=2.20;
+      if(Number.isFinite(angle)&&angle>maxBend){
+       const q=new T.Quaternion().setFromUnitVectors(first,second);
+       q.identity().slerp(new T.Quaternion().setFromUnitVectors(first,second),maxBend/angle);
+       towardEdge.copy(m).add(first.applyQuaternion(q));
+      }
+     }
+     fingerTargets.push({name,height:edgeY,sideGap});
+    }
     aim(prefix+'Intermediate',prefix+'Distal',towardEdge);updatePose();joints++;
     const d=raw(prefix+'Distal');if(d){distances.push(d.distanceTo(edge));if(refined){
      const midNow=raw(prefix+'Intermediate'),baseNow=raw(prefix+'Proximal');
