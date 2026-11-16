@@ -175,7 +175,7 @@ export function createStudio(canvas){
    const edgeY=T.MathUtils.clamp(base.clone().sub(phone.position).dot(up)*.68,-.051,.051);
    const sideGap=name==='Index'?.005:name==='Middle'?.004:name==='Ring'?.003:.002;
    const contactTarget=phone.position.clone().addScaledVector(right,side*(half+sideGap)).addScaledVector(up,edgeY).addScaledVector(normal,-.003);
-   const solution=refined?solveGripFinger(base,mid,tip,contactTarget,mid.clone().sub(base).addScaledVector(normal,-.020),1.65):null;
+   const solution=refined?solveGripFinger(base,mid,tip,contactTarget,mid.clone().sub(base).addScaledVector(normal,-.020),1.95):null;
    const direction=mid.clone().sub(base).normalize().multiplyScalar(refined?.72:.55).add(normal.clone().multiplyScalar(refined?-.24:.75)).add(right.clone().multiplyScalar(refined?side*.12:-side*.19)).normalize();
    aim(prefix+'Proximal',prefix+'Intermediate',solution?solution.joint:base.clone().add(direction));updatePose();joints++;
    const m=raw(prefix+'Intermediate');
