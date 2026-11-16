@@ -175,17 +175,17 @@ export function createStudio(canvas){
    aim(prefix+'Proximal',prefix+'Intermediate',base.clone().add(direction));updatePose();joints++;
    const m=raw(prefix+'Intermediate');if(m){const towardEdge=edge.clone().addScaledVector(up,(base.clone().sub(middle).dot(up))*.6).addScaledVector(normal,refined?.007:.018);aim(prefix+'Intermediate',prefix+'Distal',towardEdge);updatePose();joints++;const d=raw(prefix+'Distal');if(d){distances.push(d.distanceTo(edge));if(refined){const rel=d.clone().sub(phone.position),dx=Math.max(0,Math.abs(rel.dot(right))-half),dy=Math.max(0,Math.abs(rel.dot(up))-.145*phone.scale.y*.5),dz=Math.max(0,Math.abs(rel.dot(normal))-.006*phone.scale.z);contacts.push(Math.hypot(dx,dy,dz));}}}
   }
-  const thumb=raw('rightThumbProximal'),thumbMid=raw('rightThumbIntermediate'),thumbDistal=raw('rightThumbDistal');
+  const thumb=raw('rightThumbMetacarpal'),thumbMid=raw('rightThumbProximal'),thumbDistal=raw('rightThumbDistal');
   if(refined&&thumb&&thumbMid&&thumbDistal){
    const side=thumb.clone().sub(phone.position).dot(right)>=0?1:-1;
    const baseTarget=phone.position.clone().addScaledVector(right,side*(half+.012)).addScaledVector(up,-.039).addScaledVector(normal,-.006);
-   aim('rightThumbProximal','rightThumbIntermediate',baseTarget);updatePose();joints++;thumbJoints++;
-   const mid=raw('rightThumbIntermediate');
+   aim('rightThumbMetacarpal','rightThumbProximal',baseTarget);updatePose();joints++;thumbJoints++;
+   const mid=raw('rightThumbProximal');
    if(mid){const tipTarget=phone.position.clone().addScaledVector(right,side*(half+.002)).addScaledVector(up,-.025).addScaledVector(normal,-.008);
-    aim('rightThumbIntermediate','rightThumbDistal',tipTarget);updatePose();joints++;thumbJoints++;
+    aim('rightThumbProximal','rightThumbDistal',tipTarget);updatePose();joints++;thumbJoints++;
     const tip=raw('rightThumbDistal');if(tip)thumbTipGap=tip.distanceTo(tipTarget);
    }
-  }else if(thumb&&thumbDistal){const side=thumb.clone().sub(phone.position).dot(right)>=0?1:-1;aim('rightThumbProximal','rightThumbDistal',phone.position.clone().addScaledVector(right,side*(refined?.027:.024)).addScaledVector(up,refined?-.034:-.025).addScaledVector(normal,refined?.008:.013));updatePose();joints++;}
+  }else if(thumbMid&&thumbDistal){const side=thumbMid.clone().sub(phone.position).dot(right)>=0?1:-1;aim('rightThumbProximal','rightThumbDistal',phone.position.clone().addScaledVector(right,side*(refined?.027:.024)).addScaledVector(up,refined?-.034:-.025).addScaledVector(normal,refined?.008:.013));updatePose();joints++;}
   const tips=refined?refineFingerTips(right,up,normal,half):{tipJoints:0,tipBefore:null,tipAfter:null,tipMaxAngle:0};
   return {gripJoints:joints,gripError:distances.length?Math.max(...distances):null,refinedGrip:refined,wristRoll,thumbJoints,thumbTipGap,phonePalmOffset:phone.position.clone().sub(middle).dot(normal),contactMean:contacts.length?contacts.reduce((a,b)=>a+b,0)/contacts.length:null,...tips};
  }
