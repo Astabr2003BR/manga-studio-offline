@@ -161,3 +161,11 @@ Gratuito/offline, sem IA generativa no aplicativo, sem créditos, mensalidades o
 - Comparação de PNGs antes/depois: apenas 0,175% dos pixels da página mudou; recorte do celular/dedos ~6,85% mudou; cabelo, rosto e cobertor nas regiões medidas permaneceram idênticos. O recorte revela alguns dedos alongados/pendentes na lateral do celular. **QA artístico não aprovado**, apesar da melhoria quantitativa e do CI verde.
 - Próximos passos: refinar a curvatura/anatomia das falanges com checagem visual em diferentes ângulos e poses; evitar otimizar exclusivamente a distância à caixa geométrica do celular, porque isso pode induzir postura artificial; só depois prosseguir com luz, sombras e materiais do Bloco 2.
 - Sem merge, release, APK/AAB, custos, IA generativa, mensalidades, créditos ou serviços externos. Teste físico Android continua pendente.
+
+### Bloco 1 — QA multângulo e curvatura da pegada (2026-11-16)
+
+- Código candidato `d3d0c38637f91970837c100a4362ab1350796a5a`, após HEAD `6c0f993258c1be65efcfff33b743141ca6a7b91f`, no PR #1 draft. Branch `v040-artwork-block1`, main mantém código V0.31.
+- Em `story2`, os quatro dedos agora possuem alvos diferenciados para contato com lateral do telefone e altura restrita ao aparelho. Novo diagnóstico de ângulos entre falanges, alturas e espaçamentos laterais. Nenhuma troca de modelo, geometria do cabelo, posição do celular, polegar, cobertor, schema ou dependência externa.
+- Testes adicionais para curvatura finita e limitada, 4 alvos dentro da altura do telefone, contato e regressões existentes. Geração de três PNGs específicos de QA da pegada (`studio-evidence/grip-left.png`, `grip-front.png`, `grip-right.png`), com ângulos -25°, 0° e +25°, pose sentada em close. QA separado dos dados reais do editor.
+- CI do HEAD exato https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43944546280 em execução neste registro; os builds foram concluídos com sucesso, teste do motor/ editor e QA visual ainda não validados. Não aprovar o incremento nem promover merge sem examinar a saída real.
+- Próxima ação: consultar resultado final do CI; se falhar, localizar a causa, corrigir e repetir; se passar, baixar artefatos, inspecionar os três PNGs e comparar com o candidato anterior. Registrar métricas e QA artístico honesto. Android físico ainda pendente; sem release ou APK.
