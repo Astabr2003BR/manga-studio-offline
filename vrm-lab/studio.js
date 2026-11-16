@@ -171,7 +171,7 @@ export function createStudio(canvas){
   for(const name of ['Index','Middle','Ring','Little']){const prefix='right'+name,base=raw(prefix+'Proximal'),mid=raw(prefix+'Intermediate'),tip=raw(prefix+'Distal');if(!base||!mid||!tip)continue;
    const side=base.clone().sub(phone.position).dot(right)>=0?1:-1,edge=phone.position.clone().addScaledVector(right,side*(half+.008));
    // Curl first phalanx toward the side of the handset; the next folds over the edge.
-   const direction=mid.clone().sub(base).normalize().multiplyScalar(refined?.72:.55).add(normal.clone().multiplyScalar(refined?.55:.75)).add(right.clone().multiplyScalar(refined?side*.12:-side*.19)).normalize();
+   const direction=mid.clone().sub(base).normalize().multiplyScalar(refined?.72:.55).add(normal.clone().multiplyScalar(refined?-.24:.75)).add(right.clone().multiplyScalar(refined?side*.12:-side*.19)).normalize();
    aim(prefix+'Proximal',prefix+'Intermediate',base.clone().add(direction));updatePose();joints++;
    const m=raw(prefix+'Intermediate');if(m){
     // Stagger each target along the actual handset edge and keep the last
