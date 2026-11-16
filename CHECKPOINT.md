@@ -79,7 +79,7 @@ Critérios de aceitação: melhorias visuais perceptíveis e documentadas; nenhu
 
 Gratuito/offline, sem IA generativa no aplicativo, sem créditos, mensalidades ou serviços pagos. Android-first. Preservar o visual aprovado, código estável, funcionalidades e dados. Não misturar projetos, não apagar dados, não publicar APK/AAB sem autorização. Priorizar soluções testáveis, reversíveis, seguras e manutenção simples.
 
-**Próxima ação concreta:** continuar na branch `v040-artwork-block1` a partir de `4282ecaa2b29ddcd72e650600f0902060c2baaca` (CI verde), aprimorando geometria e materiais do cabelo e a mão do celular. Preservar a correção de manchas do cobertor; naturalidade têxtil segue pendente. Não promover V0.40 até consolidar e validar os blocos restantes.
+**Próxima ação concreta:** continuar na branch `v040-artwork-block1` a partir de `5aab0f5963d0582f2fa8388f62a95fe70bd75e2e` (CI verde), iniciando melhoria geométrica localizada das mechas e da malha/pose da mão do celular, com preservação da identidade e medição de ganho visual. A textura refinada e articulação distal estão implementadas e validadas tecnicamente, mas o ganho artístico é discreto. Preservar cobertor sem manchas. Não promover V0.40 antes de consolidar os demais blocos.
 
 
 ## 8. Retomada V0.40 — incremento 1 (2026-11-16)
@@ -121,3 +121,10 @@ Gratuito/offline, sem IA generativa no aplicativo, sem créditos, mensalidades o
 - Novos testes: textura refinada, 1–4 articulações distais, distância estimada menor, limite angular, cache <=6, restauração de material/grip legado. Preserva testes anteriores e malha única do cobertor.
 - CI real iniciado: https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43901683048 (HEAD `5aab0f5963d0582f2fa8388f62a95fe70bd75e2e`). Pendente de resultado e revisão visual; não declarar aprovado antes de recuperar relatório e PNG.
 - Próxima ação: concluir regressão e comparar página com revisão 2. Corrigir se necessário; manter aparência original, sem serviços externos, IA generativa, custos ou APK/AAB.
+
+### Fechamento do segundo incremento — CI e QA visual
+
+- HEAD candidato `5aab0f5963d0582f2fa8388f62a95fe70bd75e2e`, PR #1 segue aberto em rascunho. CI https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43901683048 aprovado integralmente: motor e editor. Artefato https://github.com/Astabr2003BR/manga-studio-offline/actions/runs/43901683048/artifacts/14241179021.
+- Editor 58/58, errors=[], external=[]; motor: 4 articulações distais, distância estimada 0.0205553527 m → 0.0164609764 m (19.9% de redução), ângulo máximo 0.30 rad, cache 6, hairRefined=true, restauração legada/determinismo aprovados. Distância é estimativa de ponta baseada em ossos, não colisão física.
+- QA visual: PNG editorial 1080×1350 e comparação ampliada com revisão 2 inspecionados. Alteração em 2.19% dos pixels da página, região do cabelo 47.95% dos pixels (magnitude média RGB 0.45), região mão/celular 3.98% (magnitude média RGB 1.10), região do cobertor 0% (retângulo x=205..864, y=395..484). Ganho visual discreto; não declarar cabelo/mão finalizados. Textura original de cabelo 512×1024 preservada; nenhuma alteração geométrica neste incremento.
+- Próximo incremento: examinar a geometria das mechas e a topologia/pose da mão, evitando outra camada de filtro como substituto de melhoria geométrica; preservar material, silhueta e os modos legados. A V0.31 segue estável em main. Sem merge, release, APK/AAB, serviço pago, IA generativa ou validação Android física.
