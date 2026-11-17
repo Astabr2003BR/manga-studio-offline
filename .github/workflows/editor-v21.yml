@@ -1,13 +1,16 @@
-name: Manga Studio V0.31 integrated editor
+name: Manga Studio integrated regression
 on:
   push:
     branches: [main]
     paths: ['editor-v21/**', 'vrm-lab/studio.js', 'vrm-lab/build-studio.mjs', 'vrm-lab/package.json', '.github/workflows/editor-v21.yml']
+  pull_request:
+    branches: [main]
+    paths: ['editor-v21/**', 'vrm-lab/**', '.github/workflows/editor-v21.yml']
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: manga-editor-v21
+  group: manga-editor-v21-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   validate:
@@ -27,12 +30,15 @@ jobs:
       - run: node editor-v21/build.mjs
       - run: npx playwright install --with-deps chromium
         working-directory: vrm-lab
+      - run: node test-studio.mjs
+        working-directory: vrm-lab
       - run: node editor-v21/test.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: manga-studio-v31-integrated
+          name: manga-studio-integrated-validation
           path: |
             editor-v21/dist/
             editor-v21/evidence/
+            vrm-lab/studio-evidence/
           retention-days: 3
           if-no-files-found: error
