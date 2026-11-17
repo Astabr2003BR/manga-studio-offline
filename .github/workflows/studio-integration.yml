@@ -2,7 +2,7 @@ name: Manga Studio V0.21 real panel engine
 on:
   push:
     branches: [main]
-    paths: ['vrm-lab/studio.js','vrm-lab/build-studio.mjs','vrm-lab/test-studio.mjs','vrm-lab/studio-test.html','.github/workflows/studio-integration.yml']
+    paths: ['vrm-lab/studio.js','vrm-lab/build-studio.mjs','vrm-lab/test-studio.mjs','vrm-lab/test-grip.mjs','vrm-lab/studio-test.html','.github/workflows/studio-integration.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,7 +26,10 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: node build-studio.mjs
       - run: npx playwright install --with-deps chromium
-      - run: node test-studio.mjs
+      - name: Fast grip visual gate
+        run: node test-grip.mjs
+      - name: Full studio and editor regression
+        run: node test-studio.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: manga-studio-v21-runtime
