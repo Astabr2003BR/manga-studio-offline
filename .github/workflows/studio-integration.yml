@@ -1,7 +1,7 @@
 name: Manga Studio V0.21 real panel engine
 on:
   push:
-    branches: [main]
+    branches: [main, v040-artwork-block1]
     paths: ['vrm-lab/studio.js','vrm-lab/build-studio.mjs','vrm-lab/test-studio.mjs','vrm-lab/test-grip.mjs','vrm-lab/studio-test.html','.github/workflows/studio-integration.yml']
   workflow_dispatch:
 permissions:
